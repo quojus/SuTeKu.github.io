@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku-Puzzle</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin-right: 10px;
+        }
+        #help-icon {
+            cursor: pointer;
+            font-size: 24px;
+        }
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #difficulty-selection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        #difficulty-selection button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        #sudoku-grid {
+            display: none;
+            grid-template-columns: repeat(9, 40px);
+            grid-gap: 1px;
+            background-color: #000;
+            border: 2px solid #000;
+        }
+        .sudoku-cell {
+            width: 40px;
+            height: 40px;
+            background-color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .predefined {
+            background-color: #ddd;
+        }
+        #puzzle-pieces {
+            display: none;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            max-width: 750px;
+        }
+        .puzzle-piece {
+            margin: 15px;
+            cursor: pointer;
+            position: relative;
+        }
+        .puzzle-cell {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .puzzle-cell.filled {
+            border: 1px solid #333;
+            box-shadow: 1px 2px 2px rgba(0,0,0,0.5);
+        }
+        .preview-valid {
+            background-color: rgba(0, 255, 0, 0.5) !important;
+        }
+        .preview-invalid {
+            background-color: rgba(255, 0, 0, 0.7) !important;
+        }
+        .user-input {
+            color: #999;
+        }
+        #number-selector {
+            position: absolute;
+            display: none;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        #number-selector button {
+            width: 30px;
+            height: 30px;
+            margin: 2px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.3);
+        }
+        #color-selector {
+            margin-top: 10px;
+        }
+        #color-selector input {
+            width: 100%;
+        }
+        .sudoku-cell:nth-child(3n) {
+            border-right: 2px solid #000;
+        }
+        .sudoku-cell:nth-child(9n) {
+            border-right: none;
+        }
+        .sudoku-cell:nth-child(n+19):nth-child(-n+27),
+        .sudoku-cell:nth-child(n+46):nth-child(-n+54),
+        .sudoku-cell:nth-child(n+73):nth-child(-n+81) {
+            border-bottom: 2px solid #000;
+        }
+        .sudoku-cell:nth-child(3n+1) {
+            border-left: 2px solid #000;
+        }
+        .sudoku-cell:nth-child(-n+9) {
+            border-top: 2px solid #000;
+        }
+        #new-game-btn {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #success-message {
+            display: none;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+        }
+        #help-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        #help-popup h2 {
+            margin-top: 0;
+        }
+        #help-popup ul {
+            padding-left: 20px;
+        }
+        #help-popup button {
+            margin-top: 10px;
+        }
+        .rotate-buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 4px;
+        }
+        .rotate-button {
+            padding: 1px 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>SuTeKu</h1>
+        <span id="help-icon">❓</span>
+    </div>
+    <div id="game-container">
+        <div id="difficulty-selection">
+            <button onclick="startGame('easy')">Einfach</button>
+            <button onclick="startGame('medium')">Mittel</button>
+            <button onclick="startGame('hard')">Schwer</button>
+        </div>
+        <div id="sudoku-grid"></div>
+        <div id="puzzle-pieces"></div>
+        <button id="new-game-btn">Neues Spiel</button>
+    </div>
+    <div id="success-message">
+        Geschafft! Sie haben alle Puzzleteile platziert.
+    </div>
+    <div id="number-selector">
+        <div id="numbers"></div>
+        <div id="color-selector">
+            <input type="color" id="cell-color" value="#999999">
+        </div>
+    </div>
+    <div id="help-popup">
+        <h2>Spielanleitung</h2>
+        <ul>
+            <li>Wählen Sie eine Schwierigkeitsstufe aus, um das Spiel zu starten.</li>
+            <li>Ziehen Sie die Puzzleteile in das Sudoku-Gitter.</li>
+            <li>Doppelklicken Sie auf eine leere Zelle, um eine Zahl einzugeben.</li>
+            <li>Doppelklicken Sie auf ein platziertes Puzzleteil, um es zu entfernen.</li>
+            <li>Füllen Sie das gesamte Gitter aus, um das Spiel zu gewinnen.</li>
+            <li>Bei mittlerem und schwerem Schwierigkeitsgrad können Sie die Puzzleteile drehen.</li>
+            <li>Bei schwerem Schwierigkeitsgrad wird eine Zahl pro Puzzleteil versteckt.</li>
+        </ul>
+        <button onclick="closeHelpPopup()">Schließen</button>
+    </div>
+
+    <script>
+        const sudokuGrid = document.getElementById('sudoku-grid');
+        const puzzlePieces = document.getElementById('puzzle-pieces');
+        const numberSelector = document.getElementById('number-selector');
+        const numbers = document.getElementById('numbers');
+        const cellColor = document.getElementById('cell-color');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const successMessage = document.getElementById('success-message');
+        const helpIcon = document.getElementById('help-icon');
+        const helpPopup = document.getElementById('help-popup');
+        const difficultySelection = document.getElementById('difficulty-selection');
+        let draggedShape = null;
+        let selectedCell = null;
+        let currentDifficulty = null;
+        let predefinedNumbers = null;
+        let puzzleShapes = null;
+
+        function startGame(difficulty) {
+            currentDifficulty = difficulty;
+            difficultySelection.style.display = 'none';
+            sudokuGrid.style.display = 'grid';
+            puzzlePieces.style.display = 'flex';
+            newGameBtn.style.display = 'block';
+
+            const result = generateSudokuWithTetrominoes();
+            predefinedNumbers = result.predefinedNumbers;
+            puzzleShapes = result.puzzleShapes;
+
+            createSudokuGrid();
+            createNumberSelector();
+            createPuzzlePieces();
+            successMessage.style.display = 'none';
+        }
+
+        function hasDuplicatesNotZero(arr) {
+            const seenNumbers = new Set();
+            for (let num of arr) {
+                if (num !== 0) {
+                    if (seenNumbers.has(num)) {
+                        return true;
+                    }
+                    seenNumbers.add(num);
+                }
+            }
+            return false;
+        }
+
+        function checkField(field, x, y) {
+            if (hasDuplicatesNotZero(field[x])) {
+                return false;
+            }
+            if (hasDuplicatesNotZero(field.map(row => row[y]))) {
+                return false;
+            }
+            const boxX = Math.floor(x / 3);
+            const boxY = Math.floor(y / 3);
+            const boxValues = [];
+            for (let i = boxX * 3; i < boxX * 3 + 3; i++) {
+                for (let j = boxY * 3; j < boxY * 3 + 3; j++) {
+                    boxValues.push(field[i][j]);
+                }
+            }
+            if (hasDuplicatesNotZero(boxValues)) {
+                return false;
+            }
+            return true;
+        }
+
+        function nextCell(x, y) {
+            y += 1;
+            if (y > 8) {
+                y = 0;
+                x += 1;
+            }
+            return [x, y];
+        }
+
+        function findSudokus(field = null) {
+            if (field === null) {
+                field = Array(9).fill().map(() => Array(9).fill(0));
+            }
+
+            function backtrack(x, y) {
+                if (x === 9) {
+                    if (checkField(field, 8, 8)) {
+                        return field;
+                    }
+                    return null;
+                }
+
+                const [nextX, nextY] = nextCell(x, y);
+
+                const numbers = Array.from({length: 9}, (_, i) => i + 1);
+                for (let i = numbers.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+                }
+
+                for (let num of numbers) {
+                    field[x][y] = num;
+                    if (checkField(field, x, y)) {
+                        const result = backtrack(nextX, nextY);
+                        if (result) {
+                            return result;
+                        }
+                    }
+                    field[x][y] = 0;
+                }
+                return null;
+            }
+
+            return backtrack(0, 0);
+        }
+
+        function createGrid() {
+            return Array(9).fill().map(() => Array(9).fill(0));
+        }
+
+        function generateTetromino() {
+            const tetrominoes = [
+                [[0, 0], [1, 0], [2, 0], [3, 0]],
+                [[0, 0], [0, 1], [0, 2], [0, 3]],
+                [[0, 0], [0, 1], [1, 0], [1, 1]],
+                [[0, 1], [1, 1], [1, 0], [2, 0]],
+                [[0, 0], [0, 1], [1, 1], [1, 2]],
+                [[0, 0], [1, 0], [1, 1], [2, 1]],
+                [[1, 0], [1, 1], [0, 1], [0, 2]],
+                [[0, 1], [1, 1], [2, 1], [1, 0]],
+                [[1, 0], [1, 1], [1, 2], [0, 1]],
+                [[0, 0], [1, 0], [2, 0], [1, 1]],
+                [[0, 1], [1, 0], [1, 1], [1, 2]],
+                [[0, 0], [0, 1], [0, 2], [1, 2]],
+                [[0, 0], [1, 0], [2, 0], [0, 1]],
+                [[0, 0], [1, 0], [1, 1], [1, 2]],
+                [[2, 0], [0, 1], [1, 1], [2, 1]],
+                [[1, 0], [1, 1], [1, 2], [0, 2]],
+                [[0, 0], [0, 1], [1, 1], [2, 1]],
+                [[0, 0], [1, 0], [0, 1], [0, 2]],
+                [[0, 0], [1, 0], [2, 0], [2, 1]]
+            ];
+            return tetrominoes[Math.floor(Math.random() * tetrominoes.length)];
+        }
+
+        function canPlaceTetromino(grid, tetromino, x, y) {
+            for (let [dx, dy] of tetromino) {
+                let nx = x + dx, ny = y + dy;
+                if (nx < 0 || nx >= 9 || ny < 0 || ny >= 9 || grid[ny][nx] !== 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function placeTetromino(mask, tetromino, x, y, index) {
+            for (let [dx, dy] of tetromino) {
+                mask[y + dy][x + dx] = index;
+            }
+        }
+
+        function fillGridWithTetrominoes() {
+            const mask = createGrid();
+            let attempts = 0;
+            const maxAttempts = 1000;
+            let index = 1;
+
+            while (attempts < maxAttempts) {
+                const tetromino = generateTetromino();
+                const x = Math.floor(Math.random() * 9);
+                const y = Math.floor(Math.random() * 9);
+
+                if (canPlaceTetromino(mask, tetromino, x, y)) {
+                    placeTetromino(mask, tetromino, x, y, index);
+                    index++;
+                    attempts = 0;
+                } else {
+                    attempts++;
+                }
+            }
+
+            return mask;
+        }
+
+        function combineSudokuWithMask(sudoku, mask) {
+            const finalSudoku = sudoku.map((row, y) =>
+                row.map((value, x) => mask[y][x] === 0 ? value : 0)
+            );
+
+            const tetrominoDict = {};
+            for (let y = 0; y < 9; y++) {
+                for (let x = 0; x < 9; x++) {
+                    if (mask[y][x] !== 0) {
+                        const index = mask[y][x];
+                        if (!(index in tetrominoDict)) {
+                            tetrominoDict[index] = [];
+                        }
+                        tetrominoDict[index].push([x, y, sudoku[y][x]]);
+                    }
+                }
+            }
+
+            for (let index in tetrominoDict) {
+                const coords = tetrominoDict[index];
+                const minX = Math.min(...coords.map(coord => coord[0]));
+                const minY = Math.min(...coords.map(coord => coord[1]));
+                tetrominoDict[index] = coords.map(([x, y, value]) => [[x - minX, y - minY], value]);
+            }
+
+            return [finalSudoku, tetrominoDict];
+        }
+
+        function generateRandomColor() {
+            return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        }
+
+        function generateSudokuWithTetrominoes() {
+            const sudoku = findSudokus();
+            const mask = fillGridWithTetrominoes();
+            const [finalSudoku, tetrominoDict] = combineSudokuWithMask(sudoku, mask);
+
+            const predefinedNumbers = finalSudoku;
+
+            const puzzleShapes = Object.entries(tetrominoDict).map(([_, coords]) => {
+                const shape = coords.map(([coord, _]) => coord);
+                const numbers = coords.map(([_, value]) => value);
+                const maxX = Math.max(...shape.map(coord => coord[0])) + 1;
+                const maxY = Math.max(...shape.map(coord => coord[1])) + 1;
+
+                const shapeArray = Array(maxY).fill().map(() => Array(maxX).fill(0));
+                const numbersArray = Array(maxY).fill().map(() => Array(maxX).fill(0));
+
+                coords.forEach(([[x, y], value]) => {
+                    shapeArray[y][x] = 1;
+                    numbersArray[y][x] = value;
+                });
+
+                return {
+                    color: generateRandomColor(),
+                    shape: shapeArray,
+                    numbers: numbersArray
+                };
+            });
+
+            return { predefinedNumbers, puzzleShapes };
+        }
+
+        function rotatePuzzlePiece(puzzleShape, direction) {
+            const { shape, numbers } = puzzleShape;
+            const rows = shape.length;
+            const cols = shape[0].length;
+            let newShape, newNumbers;
+
+            if (direction === 'right') {
+                newShape = Array(cols).fill().map(() => Array(rows).fill(0));
+                newNumbers = Array(cols).fill().map(() => Array(rows).fill(0));
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < cols; j++) {
+                        newShape[j][rows - 1 - i] = shape[i][j];
+                        newNumbers[j][rows - 1 - i] = numbers[i][j];
+                    }
+                }
+            } else {
+                newShape = Array(cols).fill().map(() => Array(rows).fill(0));
+                newNumbers = Array(cols).fill().map(() => Array(rows).fill(0));
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < cols; j++) {
+                        newShape[cols - 1 - j][i] = shape[i][j];
+                        newNumbers[cols - 1 - j][i] = numbers[i][j];
+                    }
+                }
+            }
+
+            return { ...puzzleShape, shape: newShape, numbers: newNumbers };
+        }
+
+        function createSudokuGrid() {
+            sudokuGrid.innerHTML = '';
+            for (let i = 0; i < 81; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('sudoku-cell');
+                const row = Math.floor(i / 9);
+                const col = i % 9;
+                cell.dataset.row = row;
+                cell.dataset.col = col;
+
+                if (predefinedNumbers[row][col] !== 0) {
+                    cell.textContent = predefinedNumbers[row][col];
+                    cell.classList.add('predefined');
+                }
+
+                cell.addEventListener('dragover', dragOver);
+                cell.addEventListener('dragleave', dragLeave);
+                cell.addEventListener('drop', drop);
+                cell.addEventListener('dblclick', cellDoubleClick);
+
+                sudokuGrid.appendChild(cell);
+            }
+        }
+
+        function createNumberSelector() {
+            numbers.innerHTML = '';
+            for (let i = 0; i <= 9; i++) {
+                const button = document.createElement('button');
+                button.textContent = i === 0 ? '' : i;
+                button.addEventListener('click', () => selectNumber(i));
+                numbers.appendChild(button);
+            }
+        }
+
+        function createPuzzlePieces() {
+            puzzlePieces.innerHTML = '';
+            puzzleShapes.forEach((puzzleShape, index) => {
+                const piece = createPuzzlePiece(puzzleShape);
+                puzzlePieces.appendChild(piece);
+            });
+        }
+
+        function createPuzzlePiece(puzzleShape) {
+            const piece = document.createElement('div');
+            piece.classList.add('puzzle-piece');
+            piece.style.width = `${puzzleShape.shape[0].length * 20}px`;
+            piece.style.height = `${puzzleShape.shape.length * 20}px`;
+            piece.style.display = 'grid';
+            piece.style.gridTemplateColumns = `repeat(${puzzleShape.shape[0].length}, 20px)`;
+            piece.style.gridTemplateRows = `repeat(${puzzleShape.shape.length}, 20px)`;
+            piece.draggable = true;
+            piece.addEventListener('dragstart', dragStart);
+            piece.addEventListener('dragend', dragEnd);
+            piece.dataset.shape = JSON.stringify(puzzleShape.shape);
+            piece.dataset.numbers = JSON.stringify(puzzleShape.numbers);
+            piece.dataset.color = puzzleShape.color;
+
+            puzzleShape.shape.forEach((row, rowIndex) => {
+                row.forEach((cell, colIndex) => {
+                    const cellDiv = document.createElement('div');
+                    cellDiv.classList.add('puzzle-cell');
+                    if (cell) {
+                        cellDiv.classList.add('filled');
+                        cellDiv.style.backgroundColor = puzzleShape.color;
+                        if (currentDifficulty === 'hard' && Math.random() < 0.25) {
+                            cellDiv.textContent = '?';
+                        } else {
+                            cellDiv.textContent = puzzleShape.numbers[rowIndex][colIndex];
+                        }
+                        cellDiv.style.color = '#fff';
+                        cellDiv.style.textShadow = '1px 1px 1px #000';
+                    }
+                    piece.appendChild(cellDiv);
+                });
+            });
+
+            if (currentDifficulty !== 'easy') {
+                const rotateButtons = document.createElement('div');
+                rotateButtons.classList.add('rotate-buttons');
+
+                const rotateLeftButton = document.createElement('button');
+                rotateLeftButton.textContent = '↺';
+                rotateLeftButton.classList.add('rotate-button');
+                rotateLeftButton.addEventListener('click', () => rotatePiece(piece, 'left'));
+
+                const rotateRightButton = document.createElement('button');
+                rotateRightButton.textContent = '↻';
+                rotateRightButton.classList.add('rotate-button');
+                rotateRightButton.addEventListener('click', () => rotatePiece(piece, 'right'));
+
+                rotateButtons.appendChild(rotateLeftButton);
+                rotateButtons.appendChild(rotateRightButton);
+                piece.appendChild(rotateButtons);
+            }
+
+            return piece;
+        }
+
+        function rotatePiece(piece, direction) {
+            const puzzleShape = {
+                shape: JSON.parse(piece.dataset.shape),
+                numbers: JSON.parse(piece.dataset.numbers),
+                color: piece.dataset.color
+            };
+            const rotatedPuzzleShape = rotatePuzzlePiece(puzzleShape, direction);
+            const newPiece = createPuzzlePiece(rotatedPuzzleShape);
+            piece.parentNode.replaceChild(newPiece, piece);
+        }
+
+        function dragStart(e) {
+            draggedShape = {
+                color: this.dataset.color,
+                shape: JSON.parse(this.dataset.shape),
+                numbers: JSON.parse(this.dataset.numbers)
+            };
+            e.dataTransfer.setData('text/plain', '');
+        }
+
+        function dragEnd() {
+            clearPreview();
+        }
+
+        function dragOver(e) {
+            e.preventDefault();
+            if (draggedShape) {
+                const targetRow = parseInt(e.target.dataset.row);
+                const targetCol = parseInt(e.target.dataset.col);
+                showPreview(draggedShape.shape, draggedShape.numbers, targetRow, targetCol);
+            }
+        }
+
+        function dragLeave(e) {
+            clearPreview();
+        }
+
+        function drop(e) {
+            e.preventDefault();
+            clearPreview();
+            if (draggedShape) {
+                const targetRow = parseInt(e.target.dataset.row);
+                const targetCol = parseInt(e.target.dataset.col);
+                placeShape(draggedShape.shape, draggedShape.numbers, targetRow, targetCol, draggedShape.color);
+            }
+        }
+
+        function showPreview(shape, numbers, startRow, startCol) {
+            clearPreview();
+            let canPlace = true;
+            for (let i = 0; i < shape.length; i++) {
+                for (let j = 0; j < shape[i].length; j++) {
+                    if (shape[i][j]) {
+                        const row = startRow + i;
+                        const col = startCol + j;
+                        if (row < 9 && col < 9) {
+                            const cell = sudokuGrid.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                            if (cell) {
+                                if (!cell.classList.contains('predefined') && !cell.dataset.blockId) {
+                                    cell.classList.add('preview-valid');
+                                } else {
+                                    cell.classList.add('preview-invalid');
+                                    canPlace = false;
+                                }
+                            } else {
+                                canPlace = false;
+                            }
+                        } else {
+                            canPlace = false;
+                        }
+                    }
+                }
+            }
+            return canPlace;
+        }
+
+        function clearPreview() {
+            sudokuGrid.querySelectorAll('.preview-valid, .preview-invalid').forEach(cell => {
+                cell.classList.remove('preview-valid', 'preview-invalid');
+            });
+        }
+
+        function placeShape(shape, numbers, startRow, startCol, color) {
+            if (showPreview(shape, numbers, startRow, startCol)) {
+                const blockId = Date.now();
+                for (let i = 0; i < shape.length; i++) {
+                    for (let j = 0; j < shape[i].length; j++) {
+                        if (shape[i][j]) {
+                            const row = startRow + i;
+                            const col = startCol + j;
+                            const cell = sudokuGrid.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                            cell.style.backgroundColor = color;
+                            cell.textContent = numbers[i][j];
+                            cell.dataset.blockId = blockId;
+                            cell.style.color = '#fff';
+                            cell.classList.remove('user-input');
+                            delete cell.dataset.userInput;
+                            delete cell.dataset.userColor;
+                        }
+                    }
+                }
+                const placedPiece = puzzlePieces.querySelector(`[data-shape='${JSON.stringify(shape)}'][data-numbers='${JSON.stringify(numbers)}']`);
+                if (placedPiece) {
+                    placedPiece.remove();
+                }
+                checkGameCompletion();
+            }
+        }
+
+        function cellDoubleClick(e) {
+            const clickedCell = e.target;
+            if (clickedCell.classList.contains('predefined')) return;
+            if (clickedCell.dataset.blockId) {
+                removePuzzlePiece(clickedCell.dataset.blockId);
+                return;
+            }
+
+            selectedCell = clickedCell;
+            const rect = clickedCell.getBoundingClientRect();
+            numberSelector.style.display = 'block';
+            numberSelector.style.left = `${rect.left}px`;
+            numberSelector.style.top = `${rect.bottom}px`;
+        }
+
+        function selectNumber(number) {
+            if (selectedCell) {
+                selectedCell.textContent = number === 0 ? '' : number;
+                selectedCell.style.color = cellColor.value;
+                selectedCell.classList.add('user-input');
+                selectedCell.style.backgroundColor = '';
+                delete selectedCell.dataset.blockId;
+                selectedCell.dataset.userInput = number;
+                selectedCell.dataset.userColor = cellColor.value;
+            }
+            numberSelector.style.display = 'none';
+        }
+
+        function removePuzzlePiece(blockId) {
+    const cells = sudokuGrid.querySelectorAll(`[data-block-id="${blockId}"]`);
+    let removedShape = [];
+    let removedNumbers = [];
+    let removedColor = null;
+    let minRow = Infinity;
+    let minCol = Infinity;
+    let maxRow = -Infinity;
+    let maxCol = -Infinity;
+
+    cells.forEach((cell) => {
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        minRow = Math.min(minRow, row);
+        minCol = Math.min(minCol, col);
+        maxRow = Math.max(maxRow, row);
+        maxCol = Math.max(maxCol, col);
+
+        if (!removedColor) {
+            removedColor = cell.style.backgroundColor;
+        }
+    });
+
+    for (let i = minRow; i <= maxRow; i++) {
+        removedShape[i - minRow] = [];
+        removedNumbers[i - minRow] = [];
+        for (let j = minCol; j <= maxCol; j++) {
+            const cell = sudokuGrid.querySelector(`[data-row="${i}"][data-col="${j}"]`);
+            if (cell && cell.dataset.blockId === blockId) {
+                removedShape[i - minRow][j - minCol] = 1;
+                removedNumbers[i - minRow][j - minCol] = parseInt(cell.textContent) || 0;
+
+                cell.textContent = '';
+                cell.style.backgroundColor = '';
+                cell.style.color = '';
+                delete cell.dataset.blockId;
+                if (cell.dataset.userInput) {
+                    cell.textContent = cell.dataset.userInput === '0' ? '' : cell.dataset.userInput;
+                    cell.style.color = cell.dataset.userColor;
+                    cell.classList.add('user-input');
+                }
+            } else {
+                removedShape[i - minRow][j - minCol] = 0;
+                removedNumbers[i - minRow][j - minCol] = 0;
+            }
+        }
+    }
+
+    if (removedShape.length > 0 && removedNumbers.length > 0 && removedColor) {
+        const newPiece = createPuzzlePiece({
+            color: removedColor,
+            shape: removedShape,
+            numbers: removedNumbers
+        });
+        puzzlePieces.appendChild(newPiece);
+    }
+}
+
+function checkGameCompletion() {
+    if (puzzlePieces.children.length === 0) {
+        successMessage.style.display = 'block';
+        showFullSudoku();
+    }
+}
+
+function showFullSudoku() {
+    let isValid = true;
+    const grid = Array(9).fill().map(() => Array(9).fill(0));
+
+    sudokuGrid.querySelectorAll('.sudoku-cell').forEach(cell => {
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        const value = parseInt(cell.textContent) || 0;
+        grid[row][col] = value;
+
+        cell.style.color = '#000';
+        cell.style.backgroundColor = '#fff';
+    });
+
+    for (let i = 0; i < 9; i++) {
+        if (!checkLine(grid[i]) || !checkLine(grid.map(row => row[i])) || !checkBlock(grid, i)) {
+            isValid = false;
+            break;
+        }
+    }
+
+    if (isValid) {
+        alert("Glückwunsch! Das Sudoku ist korrekt gelöst.");
+    } else {
+        alert("Das Sudoku ist leider nicht korrekt gelöst. Bitte überprüfen Sie Ihre Eingaben.");
+    }
+}
+
+function checkLine(line) {
+    const numbers = line.filter(n => n !== 0);
+    return new Set(numbers).size === numbers.length;
+}
+
+function checkBlock(grid, blockIndex) {
+    const startRow = Math.floor(blockIndex / 3) * 3;
+    const startCol = (blockIndex % 3) * 3;
+    const numbers = [];
+
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            const value = grid[startRow + i][startCol + j];
+            if (value !== 0) {
+                numbers.push(value);
+            }
+        }
+    }
+
+    return new Set(numbers).size === numbers.length;
+}
+
+helpIcon.addEventListener('click', () => {
+    helpPopup.style.display = 'block';
+});
+
+function closeHelpPopup() {
+    helpPopup.style.display = 'none';
+}
+
+document.addEventListener('click', (e) => {
+    if (!numberSelector.contains(e.target) && e.target !== selectedCell) {
+        numberSelector.style.display = 'none';
+    }
+});
+
+newGameBtn.addEventListener('click', () => {
+    currentDifficulty = null;
+    difficultySelection.style.display = 'flex';
+    sudokuGrid.style.display = 'none';
+    puzzlePieces.style.display = 'none';
+    newGameBtn.style.display = 'none';
+    successMessage.style.display = 'none';
+});
+
+// Initialize the game
+difficultySelection.style.display = 'flex';
+sudokuGrid.style.display = 'none';
+puzzlePieces.style.display = 'none';
+newGameBtn.style.display = 'none';
+   </script>
+</body>
+</html>
