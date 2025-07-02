@@ -2,9 +2,35 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Sudoku-Puzzle</title>
     <style>
+        :root {
+            --bg-color: #f0f0f0;
+            --text-color: #000;
+            --cell-bg: #fff;
+            --cell-bg-alt: #f8f8f8;
+            --border-color: #000;
+            --predefined-bg: #ddd;
+            --predefined-bg-alt: #e8e8e8;
+            --button-bg: #fff;
+            --button-hover: #f0f0f0;
+            --shadow-color: rgba(0,0,0,0.3);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #fff;
+            --cell-bg: #2d2d2d;
+            --cell-bg-alt: #363636;
+            --border-color: #fff;
+            --predefined-bg: #404040;
+            --predefined-bg-alt: #4a4a4a;
+            --button-bg: #2d2d2d;
+            --button-hover: #404040;
+            --shadow-color: rgba(255,255,255,0.3);
+        }
+
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -12,24 +38,47 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 10px;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            transition: background-color 0.3s, color 0.3s;
         }
         #header {
             display: flex;
             align-items: center;
             margin-bottom: 20px;
+            gap: 15px;
         }
         h1 {
             margin-right: 10px;
+            font-size: clamp(24px, 5vw, 32px);
         }
-        #help-icon {
+        #help-icon, #theme-toggle {
             cursor: pointer;
-            font-size: 24px;
+            font-size: clamp(20px, 4vw, 24px);
+            padding: 10px;
+            background: var(--button-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            color: var(--text-color);
+            transition: background-color 0.3s;
+        }
+        #help-icon:hover, #theme-toggle:hover {
+            background-color: var(--button-hover);
         }
         #game-container {
             display: flex;
             flex-direction: column;
             align-items: center;
+            width: 100%;
+            max-width: 500px;
         }
         #difficulty-selection {
             display: flex;
@@ -37,52 +86,190 @@
             align-items: center;
             margin-top: 20px;
         }
-        #difficulty-selection button {
+        #seed-input-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #seed-input-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        #seed-input {
+            padding: 12px;
+            margin: 5px;
+            width: min(200px, 80vw);
+            text-align: center;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--cell-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        #seed-input-container button {
+            margin: 5px;
+            padding: 12px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            min-height: 44px;
+            transition: background-color 0.3s;
+        }
+        #seed-input-container button:hover, #seed-input-container button:active {
+            background-color: var(--button-hover);
+        }
+        #difficulty-buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        #difficulty-buttons button {
             margin: 10px;
-            padding: 10px 20px;
+            padding: 15px 30px;
             font-size: 18px;
             cursor: pointer;
+            width: min(250px, 80vw);
+            min-height: 50px;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s;
+        }
+        #difficulty-buttons button:hover, #difficulty-buttons button:active {
+            background-color: var(--button-hover);
         }
         #sudoku-grid {
             display: none;
-            grid-template-columns: repeat(9, 40px);
+            grid-template-columns: repeat(9, min(35px, 8vw));
             grid-gap: 1px;
-            background-color: #000;
-            border: 2px solid #000;
+            background-color: var(--border-color);
+            border: 3px solid var(--border-color);
+            margin-bottom: 20px;
+            transition: background-color 0.3s, border-color 0.3s;
         }
         .sudoku-cell {
-            width: 40px;
-            height: 40px;
-            background-color: #fff;
+            width: min(35px, 8vw);
+            height: min(35px, 8vw);
+            background-color: var(--cell-bg);
+            color: var(--text-color);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 18px;
+            font-size: clamp(12px, 3.5vw, 16px);
             font-weight: bold;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        .sudoku-cell.selected {
+            background-color: #ffeb3b !important;
+            border: 2px solid #ff9800 !important;
         }
         .predefined {
-            background-color: #ddd;
+            background-color: var(--predefined-bg);
+        }
+        
+        /* 3x3 Block Trennung - Dicke Ränder */
+        /* Rechte Ränder nach Spalte 2 und 5 */
+        .sudoku-cell[data-col="2"], .sudoku-cell[data-col="5"] {
+            border-right: 3px solid var(--border-color) !important;
+        }
+        
+        /* Linke Ränder nach Spalte 3 und 6 */
+        .sudoku-cell[data-col="3"], .sudoku-cell[data-col="6"] {
+            border-left: 3px solid var(--border-color) !important;
+        }
+        
+        /* Untere Ränder nach Zeile 2 und 5 */
+        .sudoku-cell[data-row="2"], .sudoku-cell[data-row="5"] {
+            border-bottom: 3px solid var(--border-color) !important;
+        }
+        
+        /* Obere Ränder nach Zeile 3 und 6 */
+        .sudoku-cell[data-row="3"], .sudoku-cell[data-row="6"] {
+            border-top: 3px solid var(--border-color) !important;
+        }
+        
+        /* 3x3 Block Hintergrundfarben - nur für leere Zellen und vordefinierte Zellen */
+        /* Block 0 (oben-links), Block 2 (oben-rechts), Block 4 (mitte), Block 6 (unten-links), Block 8 (unten-rechts) */
+        /* Leere Zellen in alternativen Blöcken */
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="0"][data-col="0"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="0"][data-col="1"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="0"][data-col="2"],
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="1"][data-col="0"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="1"][data-col="1"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="1"][data-col="2"],
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="2"][data-col="0"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="2"][data-col="1"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="2"][data-col="2"],
+        
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="0"][data-col="6"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="0"][data-col="7"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="0"][data-col="8"],
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="1"][data-col="6"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="1"][data-col="7"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="1"][data-col="8"],
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="2"][data-col="6"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="2"][data-col="7"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="2"][data-col="8"],
+        
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="3"][data-col="3"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="3"][data-col="4"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="3"][data-col="5"],
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="4"][data-col="3"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="4"][data-col="4"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="4"][data-col="5"],
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="5"][data-col="3"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="5"][data-col="4"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="5"][data-col="5"],
+        
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="6"][data-col="0"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="6"][data-col="1"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="6"][data-col="2"],
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="7"][data-col="0"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="7"][data-col="1"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="7"][data-col="2"],
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="8"][data-col="0"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="8"][data-col="1"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="8"][data-col="2"],
+        
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="6"][data-col="6"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="6"][data-col="7"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="6"][data-col="8"],
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="7"][data-col="6"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="7"][data-col="7"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="7"][data-col="8"],
+        .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="8"][data-col="6"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="8"][data-col="7"], .sudoku-cell:not([data-block-id]):not(.predefined)[data-row="8"][data-col="8"] {
+            background-color: var(--cell-bg-alt);
+        }
+        
+        /* Vordefinierte Zellen in alternativen Blöcken */
+        .sudoku-cell.predefined[data-row="0"][data-col="0"], .sudoku-cell.predefined[data-row="0"][data-col="1"], .sudoku-cell.predefined[data-row="0"][data-col="2"],
+        .sudoku-cell.predefined[data-row="1"][data-col="0"], .sudoku-cell.predefined[data-row="1"][data-col="1"], .sudoku-cell.predefined[data-row="1"][data-col="2"],
+        .sudoku-cell.predefined[data-row="2"][data-col="0"], .sudoku-cell.predefined[data-row="2"][data-col="1"], .sudoku-cell.predefined[data-row="2"][data-col="2"],
+        
+        .sudoku-cell.predefined[data-row="0"][data-col="6"], .sudoku-cell.predefined[data-row="0"][data-col="7"], .sudoku-cell.predefined[data-row="0"][data-col="8"],
+        .sudoku-cell.predefined[data-row="1"][data-col="6"], .sudoku-cell.predefined[data-row="1"][data-col="7"], .sudoku-cell.predefined[data-row="1"][data-col="8"],
+        .sudoku-cell.predefined[data-row="2"][data-col="6"], .sudoku-cell.predefined[data-row="2"][data-col="7"], .sudoku-cell.predefined[data-row="2"][data-col="8"],
+        
+        .sudoku-cell.predefined[data-row="3"][data-col="3"], .sudoku-cell.predefined[data-row="3"][data-col="4"], .sudoku-cell.predefined[data-row="3"][data-col="5"],
+        .sudoku-cell.predefined[data-row="4"][data-col="3"], .sudoku-cell.predefined[data-row="4"][data-col="4"], .sudoku-cell.predefined[data-row="4"][data-col="5"],
+        .sudoku-cell.predefined[data-row="5"][data-col="3"], .sudoku-cell.predefined[data-row="5"][data-col="4"], .sudoku-cell.predefined[data-row="5"][data-col="5"],
+        
+        .sudoku-cell.predefined[data-row="6"][data-col="0"], .sudoku-cell.predefined[data-row="6"][data-col="1"], .sudoku-cell.predefined[data-row="6"][data-col="2"],
+        .sudoku-cell.predefined[data-row="7"][data-col="0"], .sudoku-cell.predefined[data-row="7"][data-col="1"], .sudoku-cell.predefined[data-row="7"][data-col="2"],
+        .sudoku-cell.predefined[data-row="8"][data-col="0"], .sudoku-cell.predefined[data-row="8"][data-col="1"], .sudoku-cell.predefined[data-row="8"][data-col="2"],
+        
+        .sudoku-cell.predefined[data-row="6"][data-col="6"], .sudoku-cell.predefined[data-row="6"][data-col="7"], .sudoku-cell.predefined[data-row="6"][data-col="8"],
+        .sudoku-cell.predefined[data-row="7"][data-col="6"], .sudoku-cell.predefined[data-row="7"][data-col="7"], .sudoku-cell.predefined[data-row="7"][data-col="8"],
+        .sudoku-cell.predefined[data-row="8"][data-col="6"], .sudoku-cell.predefined[data-row="8"][data-col="7"], .sudoku-cell.predefined[data-row="8"][data-col="8"] {
+            background-color: var(--predefined-bg-alt);
         }
         #puzzle-pieces {
             display: none;
             flex-wrap: wrap;
             justify-content: center;
-            margin-top: 40px;
+            margin-top: 20px;
             margin-bottom: 40px;
-            max-width: 750px;
+            max-width: 100%;
+            gap: 15px;
         }
         .puzzle-piece {
-            margin: 15px;
             cursor: pointer;
             position: relative;
+            border: 3px solid transparent;
+            border-radius: 8px;
+            padding: 5px;
+        }
+        .puzzle-piece.selected {
+            border-color: #ff9800;
+            background-color: rgba(255, 152, 0, 0.1);
         }
         .puzzle-cell {
-            width: 20px;
-            height: 20px;
+            width: min(18px, 4vw);
+            height: min(18px, 4vw);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 12px;
+            font-size: clamp(10px, 2.5vw, 12px);
             font-weight: bold;
         }
         .puzzle-cell.filled {
@@ -99,59 +286,220 @@
             color: #999;
         }
         #number-selector {
-            position: absolute;
+            position: fixed;
             display: none;
             background-color: white;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
         }
         #number-selector button {
-            width: 30px;
-            height: 30px;
-            margin: 2px;
-            font-size: 16px;
+            width: min(40px, 8vw);
+            height: min(40px, 8vw);
+            margin: 3px;
+            font-size: clamp(14px, 3vw, 18px);
             cursor: pointer;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        #number-selector button:hover, #number-selector button:active {
+            background-color: #e0e0e0;
         }
         #color-selector {
             margin-top: 10px;
+            text-align: center;
         }
         #color-selector input {
-            width: 100%;
+            width: 60px;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
         }
-        .sudoku-cell:nth-child(3n) {
-            border-right: 2px solid #000;
-        }
-        .sudoku-cell:nth-child(9n) {
-            border-right: none;
-        }
-        .sudoku-cell:nth-child(n+19):nth-child(-n+27),
-        .sudoku-cell:nth-child(n+46):nth-child(-n+54),
-        .sudoku-cell:nth-child(n+73):nth-child(-n+81) {
-            border-bottom: 2px solid #000;
-        }
-        .sudoku-cell:nth-child(3n+1) {
-            border-left: 2px solid #000;
-        }
-        .sudoku-cell:nth-child(-n+9) {
-            border-top: 2px solid #000;
-        }
+
         #new-game-btn {
             display: none;
             margin-top: 20px;
-            padding: 10px 20px;
+            padding: 15px 30px;
             font-size: 16px;
             cursor: pointer;
+            min-height: 50px;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s;
+        }
+        #new-game-btn:hover, #new-game-btn:active {
+            background-color: var(--button-hover);
+        }
+        #current-seed-display {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: var(--button-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            text-align: center;
+            max-width: 90vw;
+            overflow-wrap: break-word;
+            color: var(--text-color);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        #current-seed-display button {
+            margin-left: 10px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            min-height: 36px;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        #current-seed-display button:hover {
+            background-color: var(--button-hover);
         }
         #success-message {
             display: none;
             margin-top: 20px;
-            padding: 10px;
+            padding: 15px;
             background-color: #4CAF50;
             color: white;
-            border-radius: 5px;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        #result-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        #result-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--cell-bg);
+            color: var(--text-color);
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid var(--border-color);
+            box-shadow: 0 10px 40px var(--shadow-color);
+            text-align: center;
+            max-width: 90vw;
+            max-width: 400px;
+            animation: slideIn 0.4s ease-out;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        
+        #result-modal.success #result-modal-content {
+            border-color: #4CAF50;
+            box-shadow: 0 10px 40px rgba(76, 175, 80, 0.3);
+        }
+        
+        #result-modal.error #result-modal-content {
+            border-color: #f44336;
+            box-shadow: 0 10px 40px rgba(244, 67, 54, 0.3);
+        }
+        
+        #result-modal h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        #result-modal.success h2 {
+            color: #4CAF50;
+        }
+        
+        #result-modal.error h2 {
+            color: #f44336;
+        }
+        
+        #result-modal p {
+            font-size: 18px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+        
+        #result-modal-emoji {
+            font-size: 60px;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        #result-modal button {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0 10px;
+            min-height: 50px;
+            transition: all 0.3s ease;
+        }
+        
+        #result-modal .success-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        #result-modal .success-btn:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        #result-modal .error-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        #result-modal .error-btn:hover {
+            background-color: #da190b;
+            transform: translateY(-2px);
+        }
+        
+        #result-modal .neutral-btn {
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+        }
+        
+        #result-modal .neutral-btn:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-2px);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            to { 
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
         }
         #help-popup {
             display: none;
@@ -159,11 +507,17 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: white;
+            background-color: var(--cell-bg);
+            color: var(--text-color);
             padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            z-index: 1000;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 4px 20px var(--shadow-color);
+            z-index: 1001;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
         #help-popup h2 {
             margin-top: 0;
@@ -172,38 +526,194 @@
             padding-left: 20px;
         }
         #help-popup button {
-            margin-top: 10px;
+            margin-top: 15px;
+            padding: 12px 20px;
+            font-size: 16px;
+            min-height: 44px;
         }
         .rotate-buttons {
-            display: flex;
+            display: flex; /* Standardmäßig anzeigen für Desktop */
             justify-content: space-between;
             width: 100%;
-            margin-top: 4px;
+            margin-top: 8px;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .puzzle-piece:hover .rotate-buttons {
+            opacity: 1;
+        }
+        
+        /* Für Touch-Geräte verstecken */
+        .touch-device .rotate-buttons {
+            display: none;
         }
         .rotate-button {
-            padding: 1px 4px;
-            font-size: 12px;
+            padding: 8px 12px;
+            font-size: 14px;
             cursor: pointer;
+            min-height: 36px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            flex: 1;
+            transition: background-color 0.3s;
+        }
+        .rotate-button:hover, .rotate-button:active {
+            background-color: var(--button-hover);
+        }
+        
+        #rotation-areas {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 999;
+            gap: 40px;
+            pointer-events: none;
+        }
+        
+        #rotation-areas.active {
+            display: flex;
+            pointer-events: all;
+        }
+        
+        .rotation-drop-zone {
+            width: 80px;
+            height: 80px;
+            border: 3px dashed var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            opacity: 0.7;
+        }
+        
+        .rotation-drop-zone:hover, .rotation-drop-zone.drag-over {
+            opacity: 1;
+            transform: scale(1.1);
+            border-color: #ff9800;
+            background-color: rgba(255, 152, 0, 0.1);
+        }
+        
+        #mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        
+        #mobile-place-btn {
+            padding: 12px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            min-height: 44px;
+            margin-right: 10px;
+        }
+        
+        #mobile-place-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        #mobile-clear-btn {
+            padding: 12px 20px;
+            font-size: 16px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            min-height: 44px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            
+            #puzzle-pieces {
+                margin-top: 10px;
+                margin-bottom: 80px;
+            }
+            
+            #rotation-areas {
+                gap: 20px;
+            }
+            
+            .rotation-drop-zone {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
         }
     </style>
 </head>
 <body>
     <div id="header">
         <h1>SuTeKu</h1>
+        <button id="theme-toggle" title="Theme wechseln">🌙</button>
         <span id="help-icon">❓</span>
     </div>
     <div id="game-container">
         <div id="difficulty-selection">
-            <button onclick="startGame('easy')">Einfach</button>
-            <button onclick="startGame('medium')">Mittel</button>
-            <button onclick="startGame('hard')">Schwer</button>
+            <div id="seed-input-container">
+                <label for="seed-input">Seed (optional):</label>
+                <input type="text" id="seed-input" placeholder="Leer = zufällig">
+                <button onclick="setTodaysSeed()">Heutiger Seed</button>
+                <button onclick="generateRandomSeed()">Zufälliger Seed</button>
+            </div>
+            <div id="difficulty-buttons">
+                <button onclick="startGame('easy')">Einfach</button>
+                <button onclick="startGame('medium')">Mittel</button>
+                <button onclick="startGame('hard')">Schwer</button>
+            </div>
         </div>
         <div id="sudoku-grid"></div>
         <div id="puzzle-pieces"></div>
+        <div id="current-seed-display">
+            <strong>Aktueller Seed:</strong> <span id="current-seed-value"></span>
+            <button onclick="copySeed()">Kopieren</button>
+            <button onclick="shareSeed()">Teilen</button>
+        </div>
         <button id="new-game-btn">Neues Spiel</button>
+    </div>
+    <div id="mobile-controls">
+        <button id="mobile-place-btn" disabled>Platzieren</button>
+        <button id="mobile-clear-btn">Auswahl löschen</button>
+    </div>
+    <div id="rotation-areas">
+        <div class="rotation-drop-zone" id="rotate-left-zone" data-direction="left">↺</div>
+        <div class="rotation-drop-zone" id="rotate-right-zone" data-direction="right">↻</div>
     </div>
     <div id="success-message">
         Geschafft! Sie haben alle Puzzleteile platziert.
+    </div>
+    <div id="result-modal">
+        <div id="result-modal-content">
+            <span id="result-modal-emoji"></span>
+            <h2 id="result-modal-title"></h2>
+            <p id="result-modal-message"></p>
+            <div id="result-modal-buttons"></div>
+        </div>
     </div>
     <div id="number-selector">
         <div id="numbers"></div>
@@ -215,12 +725,21 @@
         <h2>Spielanleitung</h2>
         <ul>
             <li>Wählen Sie eine Schwierigkeitsstufe aus, um das Spiel zu starten.</li>
-            <li>Ziehen Sie die Puzzleteile in das Sudoku-Gitter.</li>
-            <li>Doppelklicken Sie auf eine leere Zelle, um eine Zahl einzugeben.</li>
-            <li>Doppelklicken Sie auf ein platziertes Puzzleteil, um es zu entfernen.</li>
+            <li><strong>Desktop:</strong> Ziehen Sie die Puzzleteile in das Sudoku-Gitter.</li>
+            <li><strong>Mobile:</strong> Tippen Sie ein Puzzleteil und dann eine Zelle an, dann "Platzieren".</li>
+            <li>Doppelklicken/Doppeltippen Sie auf eine leere Zelle, um eine Zahl einzugeben.</li>
+            <li>Klicken/Tippen Sie auf ein platziertes Puzzleteil, um es zu entfernen.</li>
             <li>Füllen Sie das gesamte Gitter aus, um das Spiel zu gewinnen.</li>
             <li>Bei mittlerem und schwerem Schwierigkeitsgrad können Sie die Puzzleteile drehen.</li>
             <li>Bei schwerem Schwierigkeitsgrad wird eine Zahl pro Puzzleteil versteckt.</li>
+        </ul>
+        <h3>Seed-System</h3>
+        <ul>
+            <li><strong>Seed eingeben:</strong> Geben Sie eine Zahl oder Text ein für reproduzierbare Puzzles.</li>
+            <li><strong>Heutiger Seed:</strong> Verwenden Sie den täglichen Seed - alle spielen das gleiche Puzzle!</li>
+            <li><strong>Zufälliger Seed:</strong> Generiert einen neuen zufälligen Seed.</li>
+            <li><strong>Seed teilen:</strong> Kopieren Sie den Seed und teilen Sie ihn mit Freunden.</li>
+            <li>Leer lassen = komplett zufälliges Spiel</li>
         </ul>
         <button onclick="closeHelpPopup()">Schließen</button>
     </div>
@@ -235,19 +754,203 @@
         const successMessage = document.getElementById('success-message');
         const helpIcon = document.getElementById('help-icon');
         const helpPopup = document.getElementById('help-popup');
+        const themeToggle = document.getElementById('theme-toggle');
         const difficultySelection = document.getElementById('difficulty-selection');
+        const seedInput = document.getElementById('seed-input');
+        const currentSeedDisplay = document.getElementById('current-seed-display');
+        const currentSeedValue = document.getElementById('current-seed-value');
+        const mobileControls = document.getElementById('mobile-controls');
+        const mobilePlaceBtn = document.getElementById('mobile-place-btn');
+        const mobileClearBtn = document.getElementById('mobile-clear-btn');
+        const rotationAreas = document.getElementById('rotation-areas');
+        const rotateLeftZone = document.getElementById('rotate-left-zone');
+        const rotateRightZone = document.getElementById('rotate-right-zone');
         let draggedShape = null;
         let selectedCell = null;
+        let selectedPuzzlePiece = null;
+        let selectedGridCell = null;
         let currentDifficulty = null;
         let predefinedNumbers = null;
         let puzzleShapes = null;
+        let currentSeed = null;
+        let seedRandom = null;
+        let isTouchDevice = 'ontouchstart' in window;
+
+        // Touch-Device-Klasse hinzufügen
+        if (isTouchDevice) {
+            document.body.classList.add('touch-device');
+        }
+
+        // Theme Management
+        function initTheme() {
+            const savedTheme = localStorage.getItem('suteku-theme') || 'light';
+            setTheme(savedTheme);
+        }
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+                themeToggle.title = 'Zum hellen Modus wechseln';
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                themeToggle.textContent = '🌙';
+                themeToggle.title = 'Zum dunklen Modus wechseln';
+            }
+            localStorage.setItem('suteku-theme', theme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        }
+
+        // Seeded Random Number Generator (Mulberry32)
+        function seedRandomGenerator(seed) {
+            return function() {
+                let t = seed += 0x6D2B79F5;
+                t = Math.imul(t ^ t >>> 15, t | 1);
+                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+        }
+
+        function stringToSeed(str) {
+            let hash = 0;
+            if (str.length === 0) return hash;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
+            }
+            return Math.abs(hash);
+        }
+
+        function getTodaysSeed() {
+            const today = new Date();
+            const dateString = today.getFullYear() + '-' + 
+                             String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                             String(today.getDate()).padStart(2, '0');
+            return stringToSeed('SuTeKu-' + dateString);
+        }
+
+        function setTodaysSeed() {
+            const todaysSeed = getTodaysSeed();
+            seedInput.value = todaysSeed;
+        }
+
+        function generateRandomSeed() {
+            const randomSeed = Math.floor(Math.random() * 1000000);
+            seedInput.value = randomSeed;
+        }
+
+        function copySeed() {
+            navigator.clipboard.writeText(currentSeed).then(() => {
+                showResultModal(
+                    'success',
+                    '📋',
+                    'Seed kopiert!',
+                    `Der Seed "${currentSeed}" wurde in die Zwischenablage kopiert.`,
+                    [
+                        { text: 'OK', class: 'success-btn', action: closeResultModal }
+                    ]
+                );
+            }).catch(() => {
+                // Fallback für ältere Browser
+                const textArea = document.createElement('textarea');
+                textArea.value = currentSeed;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showResultModal(
+                    'success',
+                    '📋',
+                    'Seed kopiert!',
+                    `Der Seed "${currentSeed}" wurde in die Zwischenablage kopiert.`,
+                    [
+                        { text: 'OK', class: 'success-btn', action: closeResultModal }
+                    ]
+                );
+            });
+        }
+
+        function shareSeed() {
+            const shareText = `SuTeKu Puzzle - Seed: ${currentSeed}\nSchwierigkeit: ${currentDifficulty}\nSpiele das gleiche Puzzle: ${window.location.href}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'SuTeKu Puzzle',
+                    text: shareText
+                }).then(() => {
+                    showResultModal(
+                        'success',
+                        '🚀',
+                        'Puzzle geteilt!',
+                        'Das Puzzle wurde erfolgreich geteilt.',
+                        [
+                            { text: 'OK', class: 'success-btn', action: closeResultModal }
+                        ]
+                    );
+                }).catch(() => {
+                    // Falls sharing fehlschlägt, kopiere den Seed
+                    copySeed();
+                });
+            } else {
+                copySeed();
+                showResultModal(
+                    'success',
+                    '📋',
+                    'Bereit zum Teilen!',
+                    'Der Seed wurde kopiert. Du kannst ihn nun mit deinen Freunden teilen!',
+                    [
+                        { text: 'OK', class: 'success-btn', action: closeResultModal }
+                    ]
+                );
+            }
+        }
 
         function startGame(difficulty) {
             currentDifficulty = difficulty;
+            
+            // Seed verarbeiten
+            const inputSeed = seedInput.value.trim();
+            if (inputSeed === '') {
+                currentSeed = Math.floor(Math.random() * 1000000);
+            } else {
+                currentSeed = isNaN(inputSeed) ? stringToSeed(inputSeed) : parseInt(inputSeed);
+            }
+            
+            // Schwierigkeitsgrad-spezifischen Seed erstellen
+            let difficultySeed = currentSeed;
+            switch (difficulty) {
+                case 'easy':
+                    difficultySeed = currentSeed;
+                    break;
+                case 'medium':
+                    difficultySeed = currentSeed + 1000000;
+                    break;
+                case 'hard':
+                    difficultySeed = currentSeed + 2000000;
+                    break;
+            }
+            
+            // Seeded Random initialisieren
+            seedRandom = seedRandomGenerator(difficultySeed);
+            
+            // UI aktualisieren
             difficultySelection.style.display = 'none';
             sudokuGrid.style.display = 'grid';
             puzzlePieces.style.display = 'flex';
             newGameBtn.style.display = 'block';
+            currentSeedDisplay.style.display = 'block';
+            currentSeedValue.textContent = currentSeed;
+            
+            // Mobile Steuerung anzeigen wenn Touch-Gerät
+            if (isTouchDevice) {
+                mobileControls.style.display = 'block';
+            }
 
             const result = generateSudokuWithTetrominoes();
             predefinedNumbers = result.predefinedNumbers;
@@ -319,7 +1022,7 @@
 
                 const numbers = Array.from({length: 9}, (_, i) => i + 1);
                 for (let i = numbers.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
+                    const j = Math.floor(seedRandom() * (i + 1));
                     [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
                 }
 
@@ -365,7 +1068,7 @@
                 [[0, 0], [1, 0], [0, 1], [0, 2]],
                 [[0, 0], [1, 0], [2, 0], [2, 1]]
             ];
-            return tetrominoes[Math.floor(Math.random() * tetrominoes.length)];
+            return tetrominoes[Math.floor(seedRandom() * tetrominoes.length)];
         }
 
         function canPlaceTetromino(grid, tetromino, x, y) {
@@ -392,8 +1095,8 @@
 
             while (attempts < maxAttempts) {
                 const tetromino = generateTetromino();
-                const x = Math.floor(Math.random() * 9);
-                const y = Math.floor(Math.random() * 9);
+                const x = Math.floor(seedRandom() * 9);
+                const y = Math.floor(seedRandom() * 9);
 
                 if (canPlaceTetromino(mask, tetromino, x, y)) {
                     placeTetromino(mask, tetromino, x, y, index);
@@ -436,7 +1139,24 @@
         }
 
         function generateRandomColor() {
-            return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+            // Verwende vordefinierte, gut lesbare Farben
+            const colors = [
+                '#2E86C1', // Blau
+                '#28B463', // Grün
+                '#E74C3C', // Rot
+                '#8E44AD', // Violett
+                '#F39C12', // Orange
+                '#16A085', // Türkis
+                '#D35400', // Dunkelorange
+                '#C0392B', // Dunkelrot
+                '#7D3C98', // Dunkellila
+                '#138D75', // Dunkelgrün
+                '#B7950B', // Goldgelb
+                '#1B4F72'  // Dunkelblau
+            ];
+            
+            // Wähle zufällig eine Farbe aus der Liste
+            return colors[Math.floor(seedRandom() * colors.length)];
         }
 
         function generateSudokuWithTetrominoes() {
@@ -454,16 +1174,37 @@
 
                 const shapeArray = Array(maxY).fill().map(() => Array(maxX).fill(0));
                 const numbersArray = Array(maxY).fill().map(() => Array(maxX).fill(0));
+                const hiddenArray = Array(maxY).fill().map(() => Array(maxX).fill(false));
 
                 coords.forEach(([[x, y], value]) => {
                     shapeArray[y][x] = 1;
                     numbersArray[y][x] = value;
                 });
 
+                // Für schweren Schwierigkeitsgrad: Eine Zahl pro Puzzleteil verstecken
+                if (currentDifficulty === 'hard') {
+                    const filledCells = [];
+                    for (let y = 0; y < maxY; y++) {
+                        for (let x = 0; x < maxX; x++) {
+                            if (shapeArray[y][x] === 1) {
+                                filledCells.push([x, y]);
+                            }
+                        }
+                    }
+                    
+                    if (filledCells.length > 0) {
+                        // Wähle systematisch eine Zelle zum Verstecken aus
+                        const indexToHide = Math.floor(filledCells.length / 2); // Mittlere Zelle
+                        const [hiddenX, hiddenY] = filledCells[indexToHide];
+                        hiddenArray[hiddenY][hiddenX] = true;
+                    }
+                }
+
                 return {
                     color: generateRandomColor(),
                     shape: shapeArray,
-                    numbers: numbersArray
+                    numbers: numbersArray,
+                    hidden: hiddenArray
                 };
             });
 
@@ -471,32 +1212,36 @@
         }
 
         function rotatePuzzlePiece(puzzleShape, direction) {
-            const { shape, numbers } = puzzleShape;
+            const { shape, numbers, hidden } = puzzleShape;
             const rows = shape.length;
             const cols = shape[0].length;
-            let newShape, newNumbers;
+            let newShape, newNumbers, newHidden;
 
             if (direction === 'right') {
                 newShape = Array(cols).fill().map(() => Array(rows).fill(0));
                 newNumbers = Array(cols).fill().map(() => Array(rows).fill(0));
+                newHidden = Array(cols).fill().map(() => Array(rows).fill(false));
                 for (let i = 0; i < rows; i++) {
                     for (let j = 0; j < cols; j++) {
                         newShape[j][rows - 1 - i] = shape[i][j];
                         newNumbers[j][rows - 1 - i] = numbers[i][j];
+                        if (hidden) newHidden[j][rows - 1 - i] = hidden[i][j];
                     }
                 }
             } else {
                 newShape = Array(cols).fill().map(() => Array(rows).fill(0));
                 newNumbers = Array(cols).fill().map(() => Array(rows).fill(0));
+                newHidden = Array(cols).fill().map(() => Array(rows).fill(false));
                 for (let i = 0; i < rows; i++) {
                     for (let j = 0; j < cols; j++) {
                         newShape[cols - 1 - j][i] = shape[i][j];
                         newNumbers[cols - 1 - j][i] = numbers[i][j];
+                        if (hidden) newHidden[cols - 1 - j][i] = hidden[i][j];
                     }
                 }
             }
 
-            return { ...puzzleShape, shape: newShape, numbers: newNumbers };
+            return { ...puzzleShape, shape: newShape, numbers: newNumbers, hidden: newHidden };
         }
 
         function createSudokuGrid() {
@@ -518,6 +1263,10 @@
                 cell.addEventListener('dragleave', dragLeave);
                 cell.addEventListener('drop', drop);
                 cell.addEventListener('dblclick', cellDoubleClick);
+                
+                // Touch-Events hinzufügen
+                cell.addEventListener('touchstart', cellTouchStart);
+                cell.addEventListener('click', cellClick);
 
                 sudokuGrid.appendChild(cell);
             }
@@ -536,7 +1285,17 @@
         function createPuzzlePieces() {
             puzzlePieces.innerHTML = '';
             puzzleShapes.forEach((puzzleShape, index) => {
-                const piece = createPuzzlePiece(puzzleShape);
+                let finalPuzzleShape = puzzleShape;
+                
+                // Bei mittlerem und schwerem Schwierigkeitsgrad: zufällige Rotation
+                if (currentDifficulty !== 'easy') {
+                    const randomRotations = Math.floor(seedRandom() * 4); // 0, 1, 2, oder 3 Rotationen
+                    for (let i = 0; i < randomRotations; i++) {
+                        finalPuzzleShape = rotatePuzzlePiece(finalPuzzleShape, 'right');
+                    }
+                }
+                
+                const piece = createPuzzlePiece(finalPuzzleShape);
                 puzzlePieces.appendChild(piece);
             });
         }
@@ -554,7 +1313,12 @@
             piece.addEventListener('dragend', dragEnd);
             piece.dataset.shape = JSON.stringify(puzzleShape.shape);
             piece.dataset.numbers = JSON.stringify(puzzleShape.numbers);
+            piece.dataset.hidden = JSON.stringify(puzzleShape.hidden || []);
             piece.dataset.color = puzzleShape.color;
+            
+            // Touch-Events hinzufügen
+            piece.addEventListener('touchstart', pieceTouchStart);
+            piece.addEventListener('click', pieceClick);
 
             puzzleShape.shape.forEach((row, rowIndex) => {
                 row.forEach((cell, colIndex) => {
@@ -563,8 +1327,14 @@
                     if (cell) {
                         cellDiv.classList.add('filled');
                         cellDiv.style.backgroundColor = puzzleShape.color;
-                        if (currentDifficulty === 'hard' && Math.random() < 0.25) {
+                        
+                        // Prüfe ob diese Zelle versteckt werden soll
+                        const shouldHide = puzzleShape.hidden && puzzleShape.hidden[rowIndex] && puzzleShape.hidden[rowIndex][colIndex];
+                        
+                        if (shouldHide) {
                             cellDiv.textContent = '?';
+                            cellDiv.style.fontSize = '14px';
+                            cellDiv.style.fontWeight = 'bold';
                         } else {
                             cellDiv.textContent = puzzleShape.numbers[rowIndex][colIndex];
                         }
@@ -601,6 +1371,7 @@
             const puzzleShape = {
                 shape: JSON.parse(piece.dataset.shape),
                 numbers: JSON.parse(piece.dataset.numbers),
+                hidden: piece.dataset.hidden ? JSON.parse(piece.dataset.hidden) : null,
                 color: piece.dataset.color
             };
             const rotatedPuzzleShape = rotatePuzzlePiece(puzzleShape, direction);
@@ -612,13 +1383,50 @@
             draggedShape = {
                 color: this.dataset.color,
                 shape: JSON.parse(this.dataset.shape),
-                numbers: JSON.parse(this.dataset.numbers)
+                numbers: JSON.parse(this.dataset.numbers),
+                hidden: this.dataset.hidden ? JSON.parse(this.dataset.hidden) : null,
+                originalElement: this
             };
             e.dataTransfer.setData('text/plain', '');
+            
+            // Drag-Image zentriert setzen
+            const rect = this.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            // Erstelle eine Kopie des Elements für das Drag-Image
+            const dragImage = this.cloneNode(true);
+            dragImage.style.transform = 'rotate(0deg)'; // Rotation zurücksetzen für klares Drag-Image
+            dragImage.style.opacity = '0.8';
+            
+            // Temporär dem Body hinzufügen für das Drag-Image
+            document.body.appendChild(dragImage);
+            dragImage.style.position = 'absolute';
+            dragImage.style.top = '-1000px'; // Außerhalb des sichtbaren Bereichs
+            dragImage.style.left = '-1000px';
+            
+            // Drag-Image mit Zentrierung setzen
+            e.dataTransfer.setDragImage(dragImage, centerX, centerY);
+            
+            // Drag-Image nach kurzer Zeit entfernen
+            setTimeout(() => {
+                if (document.body.contains(dragImage)) {
+                    document.body.removeChild(dragImage);
+                }
+            }, 0);
+            
+            // Rotation-Bereiche anzeigen (nur bei mittlerem/schwerem Modus)
+            if (currentDifficulty !== 'easy') {
+                rotationAreas.classList.add('active');
+            }
         }
 
         function dragEnd() {
             clearPreview();
+            // Rotation-Bereiche verstecken
+            rotationAreas.classList.remove('active');
+            rotateLeftZone.classList.remove('drag-over');
+            rotateRightZone.classList.remove('drag-over');
         }
 
         function dragOver(e) {
@@ -735,148 +1543,403 @@
         }
 
         function removePuzzlePiece(blockId) {
-    const cells = sudokuGrid.querySelectorAll(`[data-block-id="${blockId}"]`);
-    let removedShape = [];
-    let removedNumbers = [];
-    let removedColor = null;
-    let minRow = Infinity;
-    let minCol = Infinity;
-    let maxRow = -Infinity;
-    let maxCol = -Infinity;
+            const cells = Array.from(sudokuGrid.children).filter(cell => cell.dataset.blockId === blockId);
+            let removedShape = [];
+            let removedNumbers = [];
+            let removedColor = null;
+            let minRow = Infinity;
+            let minCol = Infinity;
+            let maxRow = -Infinity;
+            let maxCol = -Infinity;
 
-    cells.forEach((cell) => {
-        const row = parseInt(cell.dataset.row);
-        const col = parseInt(cell.dataset.col);
-        minRow = Math.min(minRow, row);
-        minCol = Math.min(minCol, col);
-        maxRow = Math.max(maxRow, row);
-        maxCol = Math.max(maxCol, col);
+            cells.forEach((cell) => {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                minRow = Math.min(minRow, row);
+                minCol = Math.min(minCol, col);
+                maxRow = Math.max(maxRow, row);
+                maxCol = Math.max(maxCol, col);
 
-        if (!removedColor) {
-            removedColor = cell.style.backgroundColor;
-        }
-    });
-
-    for (let i = minRow; i <= maxRow; i++) {
-        removedShape[i - minRow] = [];
-        removedNumbers[i - minRow] = [];
-        for (let j = minCol; j <= maxCol; j++) {
-            const cell = sudokuGrid.querySelector(`[data-row="${i}"][data-col="${j}"]`);
-            if (cell && cell.dataset.blockId === blockId) {
-                removedShape[i - minRow][j - minCol] = 1;
-                removedNumbers[i - minRow][j - minCol] = parseInt(cell.textContent) || 0;
-
-                cell.textContent = '';
-                cell.style.backgroundColor = '';
-                cell.style.color = '';
-                delete cell.dataset.blockId;
-                if (cell.dataset.userInput) {
-                    cell.textContent = cell.dataset.userInput === '0' ? '' : cell.dataset.userInput;
-                    cell.style.color = cell.dataset.userColor;
-                    cell.classList.add('user-input');
+                if (!removedColor) {
+                    removedColor = cell.style.backgroundColor;
                 }
+            });
+
+            for (let i = minRow; i <= maxRow; i++) {
+                removedShape[i - minRow] = [];
+                removedNumbers[i - minRow] = [];
+                for (let j = minCol; j <= maxCol; j++) {
+                    const cell = sudokuGrid.querySelector(`[data-row="${i}"][data-col="${j}"]`);
+                    if (cell && cell.dataset.blockId === blockId) {
+                        removedShape[i - minRow][j - minCol] = 1;
+                        removedNumbers[i - minRow][j - minCol] = parseInt(cell.textContent) || 0;
+
+                        cell.textContent = '';
+                        cell.style.backgroundColor = '';
+                        cell.style.color = '';
+                        delete cell.dataset.blockId;
+                        if (cell.dataset.userInput) {
+                            cell.textContent = cell.dataset.userInput === '0' ? '' : cell.dataset.userInput;
+                            cell.style.color = cell.dataset.userColor;
+                            cell.classList.add('user-input');
+                        }
+                    } else {
+                        removedShape[i - minRow][j - minCol] = 0;
+                        removedNumbers[i - minRow][j - minCol] = 0;
+                    }
+                }
+            }
+
+            if (removedShape.length > 0 && removedNumbers.length > 0 && removedColor) {
+                // Erstelle hidden Array für entferntes Puzzleteil
+                const removedHidden = Array(removedShape.length).fill().map(() => 
+                    Array(removedShape[0].length).fill(false)
+                );
+                
+                // Für schweren Modus: Eine Zahl verstecken
+                if (currentDifficulty === 'hard') {
+                    const filledCells = [];
+                    for (let y = 0; y < removedShape.length; y++) {
+                        for (let x = 0; x < removedShape[y].length; x++) {
+                            if (removedShape[y][x] === 1) {
+                                filledCells.push([x, y]);
+                            }
+                        }
+                    }
+                    
+                    if (filledCells.length > 0) {
+                        const indexToHide = Math.floor(filledCells.length / 2);
+                        const [hiddenX, hiddenY] = filledCells[indexToHide];
+                        removedHidden[hiddenY][hiddenX] = true;
+                    }
+                }
+                
+                const newPiece = createPuzzlePiece({
+                    color: removedColor,
+                    shape: removedShape,
+                    numbers: removedNumbers,
+                    hidden: removedHidden
+                });
+                puzzlePieces.appendChild(newPiece);
+            }
+        }
+
+        function checkGameCompletion() {
+            if (puzzlePieces.children.length === 0) {
+                successMessage.style.display = 'block';
+                showFullSudoku();
+            }
+        }
+
+        function showFullSudoku() {
+            let isValid = true;
+            const grid = Array(9).fill().map(() => Array(9).fill(0));
+
+            sudokuGrid.querySelectorAll('.sudoku-cell').forEach(cell => {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                const value = parseInt(cell.textContent) || 0;
+                grid[row][col] = value;
+
+                cell.style.color = '#000';
+                cell.style.backgroundColor = '#fff';
+            });
+
+            for (let i = 0; i < 9; i++) {
+                if (!checkLine(grid[i]) || !checkLine(grid.map(row => row[i])) || !checkBlock(grid, i)) {
+                    isValid = false;
+                    break;
+                }
+            }
+
+            if (isValid) {
+                showResultModal(
+                    'success',
+                    '🎉',
+                    'Perfekt gelöst!',
+                    'Glückwunsch! Du hast das Sudoku korrekt gelöst. Alle Zahlen sind an der richtigen Stelle!',
+                    [
+                        { text: 'Neues Spiel', class: 'success-btn', action: () => { closeResultModal(); newGameBtn.click(); } },
+                        { text: 'Schließen', class: 'neutral-btn', action: closeResultModal }
+                    ]
+                );
             } else {
-                removedShape[i - minRow][j - minCol] = 0;
-                removedNumbers[i - minRow][j - minCol] = 0;
+                showResultModal(
+                    'error',
+                    '😞',
+                    'Noch nicht ganz richtig',
+                    'Das Sudoku ist leider nicht korrekt gelöst. Bitte überprüfe deine Eingaben - es gibt noch Fehler in den Reihen, Spalten oder Blöcken.',
+                    [
+                        { text: 'Weiter versuchen', class: 'error-btn', action: closeResultModal },
+                        { text: 'Neues Spiel', class: 'neutral-btn', action: () => { closeResultModal(); newGameBtn.click(); } }
+                    ]
+                );
             }
         }
-    }
 
-    if (removedShape.length > 0 && removedNumbers.length > 0 && removedColor) {
-        const newPiece = createPuzzlePiece({
-            color: removedColor,
-            shape: removedShape,
-            numbers: removedNumbers
+        function showResultModal(type, emoji, title, message, buttons) {
+            const modal = document.getElementById('result-modal');
+            const modalContent = document.getElementById('result-modal-content');
+            const emojiElement = document.getElementById('result-modal-emoji');
+            const titleElement = document.getElementById('result-modal-title');
+            const messageElement = document.getElementById('result-modal-message');
+            const buttonsContainer = document.getElementById('result-modal-buttons');
+
+            // Modal-Typ setzen
+            modal.className = type;
+            
+            // Inhalt setzen
+            emojiElement.textContent = emoji;
+            titleElement.textContent = title;
+            messageElement.textContent = message;
+            
+            // Buttons erstellen
+            buttonsContainer.innerHTML = '';
+            buttons.forEach(button => {
+                const btn = document.createElement('button');
+                btn.textContent = button.text;
+                btn.className = button.class;
+                btn.addEventListener('click', button.action);
+                buttonsContainer.appendChild(btn);
+            });
+            
+            // Modal anzeigen
+            modal.style.display = 'block';
+            
+            // Click außerhalb des Modals zum Schließen
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeResultModal();
+                }
+            });
+        }
+
+        function closeResultModal() {
+            const modal = document.getElementById('result-modal');
+            modal.style.display = 'none';
+        }
+
+        function checkLine(line) {
+            const numbers = line.filter(n => n !== 0);
+            return new Set(numbers).size === numbers.length;
+        }
+
+        function checkBlock(grid, blockIndex) {
+            const startRow = Math.floor(blockIndex / 3) * 3;
+            const startCol = (blockIndex % 3) * 3;
+            const numbers = [];
+
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const value = grid[startRow + i][startCol + j];
+                    if (value !== 0) {
+                        numbers.push(value);
+                    }
+                }
+            }
+
+            return new Set(numbers).size === numbers.length;
+        }
+
+                 // Touch-Event-Handler
+         function cellTouchStart(e) {
+             e.preventDefault();
+         }
+
+         function cellClick(e) {
+             const clickedCell = e.target;
+             
+             if (isTouchDevice) {
+                 // Mobile Touch-Interaktion
+                 if (clickedCell.classList.contains('predefined')) return;
+                 
+                 if (clickedCell.dataset.blockId) {
+                     // Platziertes Puzzleteil entfernen
+                     removePuzzlePiece(clickedCell.dataset.blockId);
+                     return;
+                 }
+                 
+                                   // Zelle für Platzierung auswählen oder Nummer eingeben
+                  if (selectedGridCell === clickedCell) {
+                      // Doppelklick-Simulation für Touch: Nummer eingeben
+                      cellDoubleClick({ target: clickedCell });
+                      return;
+                  }
+                  
+                  clearGridSelection();
+                  clickedCell.classList.add('selected');
+                  selectedGridCell = clickedCell;
+                  updateMobileControls();
+             }
+         }
+
+         function pieceTouchStart(e) {
+             e.preventDefault();
+         }
+
+         function pieceClick(e) {
+             if (isTouchDevice) {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 
+                 // Alle anderen Puzzleteile deselektieren
+                 clearPuzzleSelection();
+                 
+                 // Dieses Puzzleteil auswählen
+                 this.classList.add('selected');
+                 selectedPuzzlePiece = this;
+                 updateMobileControls();
+             }
+         }
+
+         function clearGridSelection() {
+             sudokuGrid.querySelectorAll('.sudoku-cell.selected').forEach(cell => {
+                 cell.classList.remove('selected');
+             });
+             selectedGridCell = null;
+         }
+
+         function clearPuzzleSelection() {
+             puzzlePieces.querySelectorAll('.puzzle-piece.selected').forEach(piece => {
+                 piece.classList.remove('selected');
+             });
+             selectedPuzzlePiece = null;
+             
+             // Rotation-Bereiche verstecken wenn nichts ausgewählt ist
+             if (isTouchDevice) {
+                 rotationAreas.classList.remove('active');
+             }
+         }
+
+         function updateMobileControls() {
+             const canPlace = selectedPuzzlePiece && selectedGridCell;
+             mobilePlaceBtn.disabled = !canPlace;
+             
+             // Rotation-Bereiche nur anzeigen wenn Puzzleteil ausgewählt ist und Rotation möglich ist
+             if (isTouchDevice && selectedPuzzlePiece && currentDifficulty !== 'easy') {
+                 rotationAreas.classList.add('active');
+             } else {
+                 rotationAreas.classList.remove('active');
+             }
+         }
+
+         // Mobile Steuerung Event-Listener
+         mobilePlaceBtn.addEventListener('click', () => {
+             if (selectedPuzzlePiece && selectedGridCell) {
+                 const shape = JSON.parse(selectedPuzzlePiece.dataset.shape);
+                 const numbers = JSON.parse(selectedPuzzlePiece.dataset.numbers);
+                 const color = selectedPuzzlePiece.dataset.color;
+                 const targetRow = parseInt(selectedGridCell.dataset.row);
+                 const targetCol = parseInt(selectedGridCell.dataset.col);
+                 
+                 if (placeShape(shape, numbers, targetRow, targetCol, color)) {
+                     clearPuzzleSelection();
+                     clearGridSelection();
+                     updateMobileControls();
+                 }
+             }
+         });
+
+         mobileClearBtn.addEventListener('click', () => {
+             clearPuzzleSelection();
+             clearGridSelection();
+             updateMobileControls();
+         });
+
+         helpIcon.addEventListener('click', () => {
+             helpPopup.style.display = 'block';
+         });
+
+         themeToggle.addEventListener('click', toggleTheme);
+
+         // Rotation-Bereiche Event-Handler
+         function setupRotationAreas() {
+             [rotateLeftZone, rotateRightZone].forEach(zone => {
+                 // Drag-and-Drop Events (für Desktop)
+                 zone.addEventListener('dragover', (e) => {
+                     e.preventDefault();
+                     zone.classList.add('drag-over');
+                 });
+
+                 zone.addEventListener('dragleave', (e) => {
+                     zone.classList.remove('drag-over');
+                 });
+
+                 zone.addEventListener('drop', (e) => {
+                     e.preventDefault();
+                     zone.classList.remove('drag-over');
+                     
+                     if (draggedShape && draggedShape.originalElement) {
+                         const direction = zone.dataset.direction;
+                         rotatePiece(draggedShape.originalElement, direction);
+                     }
+                     
+                     // Rotation-Bereiche verstecken
+                     rotationAreas.classList.remove('active');
+                 });
+                 
+                 // Touch Events (für Mobile)
+                 zone.addEventListener('click', (e) => {
+                     if (isTouchDevice && selectedPuzzlePiece) {
+                         e.preventDefault();
+                         const direction = zone.dataset.direction;
+                         const oldPiece = selectedPuzzlePiece;
+                         
+                         // Rotation durchführen
+                         rotatePiece(selectedPuzzlePiece, direction);
+                         
+                         // Das neue Puzzleteil finden und auswählen
+                         setTimeout(() => {
+                             // Das neue Puzzleteil ist das letzte hinzugefügte
+                             const allPieces = Array.from(puzzlePieces.children);
+                             const newPiece = allPieces[allPieces.length - 1];
+                             if (newPiece) {
+                                 clearPuzzleSelection();
+                                 newPiece.classList.add('selected');
+                                 selectedPuzzlePiece = newPiece;
+                                 updateMobileControls();
+                             }
+                         }, 50);
+                     }
+                 });
+             });
+         }
+
+         function closeHelpPopup() {
+             helpPopup.style.display = 'none';
+         }
+
+        document.addEventListener('click', (e) => {
+            if (!numberSelector.contains(e.target) && e.target !== selectedCell) {
+                numberSelector.style.display = 'none';
+            }
         });
-        puzzlePieces.appendChild(newPiece);
-    }
-}
 
-function checkGameCompletion() {
-    if (puzzlePieces.children.length === 0) {
-        successMessage.style.display = 'block';
-        showFullSudoku();
-    }
-}
+                 newGameBtn.addEventListener('click', () => {
+             currentDifficulty = null;
+             currentSeed = null;
+             difficultySelection.style.display = 'flex';
+             sudokuGrid.style.display = 'none';
+             puzzlePieces.style.display = 'none';
+             newGameBtn.style.display = 'none';
+             currentSeedDisplay.style.display = 'none';
+             successMessage.style.display = 'none';
+             mobileControls.style.display = 'none';
+             rotationAreas.classList.remove('active');
+             
+             // Mobile Auswahl zurücksetzen
+             clearPuzzleSelection();
+             clearGridSelection();
+             updateMobileControls();
+         });
 
-function showFullSudoku() {
-    let isValid = true;
-    const grid = Array(9).fill().map(() => Array(9).fill(0));
-
-    sudokuGrid.querySelectorAll('.sudoku-cell').forEach(cell => {
-        const row = parseInt(cell.dataset.row);
-        const col = parseInt(cell.dataset.col);
-        const value = parseInt(cell.textContent) || 0;
-        grid[row][col] = value;
-
-        cell.style.color = '#000';
-        cell.style.backgroundColor = '#fff';
-    });
-
-    for (let i = 0; i < 9; i++) {
-        if (!checkLine(grid[i]) || !checkLine(grid.map(row => row[i])) || !checkBlock(grid, i)) {
-            isValid = false;
-            break;
-        }
-    }
-
-    if (isValid) {
-        alert("Glückwunsch! Das Sudoku ist korrekt gelöst.");
-    } else {
-        alert("Das Sudoku ist leider nicht korrekt gelöst. Bitte überprüfen Sie Ihre Eingaben.");
-    }
-}
-
-function checkLine(line) {
-    const numbers = line.filter(n => n !== 0);
-    return new Set(numbers).size === numbers.length;
-}
-
-function checkBlock(grid, blockIndex) {
-    const startRow = Math.floor(blockIndex / 3) * 3;
-    const startCol = (blockIndex % 3) * 3;
-    const numbers = [];
-
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-            const value = grid[startRow + i][startCol + j];
-            if (value !== 0) {
-                numbers.push(value);
-            }
-        }
-    }
-
-    return new Set(numbers).size === numbers.length;
-}
-
-helpIcon.addEventListener('click', () => {
-    helpPopup.style.display = 'block';
-});
-
-function closeHelpPopup() {
-    helpPopup.style.display = 'none';
-}
-
-document.addEventListener('click', (e) => {
-    if (!numberSelector.contains(e.target) && e.target !== selectedCell) {
-        numberSelector.style.display = 'none';
-    }
-});
-
-newGameBtn.addEventListener('click', () => {
-    currentDifficulty = null;
-    difficultySelection.style.display = 'flex';
-    sudokuGrid.style.display = 'none';
-    puzzlePieces.style.display = 'none';
-    newGameBtn.style.display = 'none';
-    successMessage.style.display = 'none';
-});
-
-// Initialize the game
-difficultySelection.style.display = 'flex';
-sudokuGrid.style.display = 'none';
-puzzlePieces.style.display = 'none';
-newGameBtn.style.display = 'none';
-   </script>
+        // Initialize the game
+        initTheme();
+        setupRotationAreas();
+        difficultySelection.style.display = 'flex';
+        sudokuGrid.style.display = 'none';
+        puzzlePieces.style.display = 'none';
+        newGameBtn.style.display = 'none';
+    </script>
 </body>
 </html>
