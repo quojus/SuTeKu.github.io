@@ -501,6 +501,12 @@
                 transform: translate(-50%, -50%) scale(1);
             }
         }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
         #help-popup {
             display: none;
             position: fixed;
@@ -1415,10 +1421,7 @@
                 }
             }, 0);
             
-            // Rotation-Bereiche anzeigen (nur bei mittlerem/schwerem Modus)
-            if (currentDifficulty !== 'easy') {
-                rotationAreas.classList.add('active');
-            }
+            // Rotation-Bereiche werden am Desktop NICHT verwendet
         }
 
         function dragEnd() {
@@ -1511,7 +1514,9 @@
                     placedPiece.remove();
                 }
                 checkGameCompletion();
+                return true; // Erfolgreich platziert
             }
+            return false; // Konnte nicht platziert werden
         }
 
         function cellDoubleClick(e) {
@@ -1833,9 +1838,18 @@
                  const targetCol = parseInt(selectedGridCell.dataset.col);
                  
                  if (placeShape(shape, numbers, targetRow, targetCol, color)) {
+                     // Erfolgreich platziert
                      clearPuzzleSelection();
                      clearGridSelection();
                      updateMobileControls();
+                 } else {
+                     // Platzierung nicht möglich - kurzes visuelles Feedback
+                     selectedGridCell.style.animation = 'shake 0.5s';
+                     setTimeout(() => {
+                         if (selectedGridCell) {
+                             selectedGridCell.style.animation = '';
+                         }
+                     }, 500);
                  }
              }
          });
@@ -1855,30 +1869,7 @@
          // Rotation-Bereiche Event-Handler
          function setupRotationAreas() {
              [rotateLeftZone, rotateRightZone].forEach(zone => {
-                 // Drag-and-Drop Events (für Desktop)
-                 zone.addEventListener('dragover', (e) => {
-                     e.preventDefault();
-                     zone.classList.add('drag-over');
-                 });
-
-                 zone.addEventListener('dragleave', (e) => {
-                     zone.classList.remove('drag-over');
-                 });
-
-                 zone.addEventListener('drop', (e) => {
-                     e.preventDefault();
-                     zone.classList.remove('drag-over');
-                     
-                     if (draggedShape && draggedShape.originalElement) {
-                         const direction = zone.dataset.direction;
-                         rotatePiece(draggedShape.originalElement, direction);
-                     }
-                     
-                     // Rotation-Bereiche verstecken
-                     rotationAreas.classList.remove('active');
-                 });
-                 
-                 // Touch Events (für Mobile)
+                 // Nur Touch Events (für Mobile) - keine Drag-and-Drop Events mehr
                  zone.addEventListener('click', (e) => {
                      if (isTouchDevice && selectedPuzzlePiece) {
                          e.preventDefault();
