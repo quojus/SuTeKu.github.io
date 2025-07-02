@@ -50,29 +50,76 @@
             user-select: none;
             transition: background-color 0.3s, color 0.3s;
         }
-        #header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            gap: 15px;
-        }
-        h1 {
-            margin-right: 10px;
-            font-size: clamp(24px, 5vw, 32px);
-        }
-        #help-icon, #theme-toggle {
+
+        
+        #suteku-menu-btn {
+            position: fixed;
+            left: 10px;
+            top: 10px;
             cursor: pointer;
-            font-size: clamp(20px, 4vw, 24px);
-            padding: 10px;
+            padding: 5px;
             background: var(--button-bg);
             border: 1px solid var(--border-color);
-            border-radius: 50%;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+        }
+        
+        #suteku-menu-btn:hover {
+            background-color: var(--button-hover);
+        }
+        
+        #suteku-menu-btn svg {
+            width: 40px;
+            height: 30px;
+        }
+        
+        #suteku-menu {
+            position: fixed;
+            top: 60px;
+            left: 10px;
+            background: var(--button-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+            min-width: 150px;
+        }
+        
+        #suteku-menu.show {
+            display: block;
+        }
+        
+        .menu-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
             color: var(--text-color);
             transition: background-color 0.3s;
         }
-        #help-icon:hover, #theme-toggle:hover {
+        
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+        
+        .menu-item:hover {
             background-color: var(--button-hover);
         }
+        
+        #seed-display-menu {
+            padding: 8px 16px;
+            font-size: 12px;
+            color: var(--text-color);
+            background-color: var(--predefined-bg);
+            border-bottom: 1px solid var(--border-color);
+            font-family: monospace;
+            word-break: break-all;
+        }
+
         #game-container {
             display: flex;
             flex-direction: column;
@@ -323,50 +370,7 @@
             border-radius: 4px;
         }
 
-        #new-game-btn {
-            display: none;
-            margin-top: 20px;
-            padding: 15px 30px;
-            font-size: 16px;
-            cursor: pointer;
-            min-height: 50px;
-            border-radius: 8px;
-            border: 2px solid var(--border-color);
-            background-color: var(--button-bg);
-            color: var(--text-color);
-            transition: background-color 0.3s;
-        }
-        #new-game-btn:hover, #new-game-btn:active {
-            background-color: var(--button-hover);
-        }
-        #current-seed-display {
-            display: none;
-            margin-top: 10px;
-            padding: 10px;
-            background-color: var(--button-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            text-align: center;
-            max-width: 90vw;
-            overflow-wrap: break-word;
-            color: var(--text-color);
-            transition: background-color 0.3s, border-color 0.3s;
-        }
-        #current-seed-display button {
-            margin-left: 10px;
-            padding: 8px 12px;
-            font-size: 12px;
-            cursor: pointer;
-            min-height: 36px;
-            background-color: var(--button-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-        #current-seed-display button:hover {
-            background-color: var(--button-hover);
-        }
+
         #success-message {
             display: none;
             margin-top: 20px;
@@ -656,6 +660,22 @@
                 padding: 5px;
             }
             
+            #suteku-menu-btn {
+                left: 5px;
+                top: 5px;
+                padding: 3px;
+            }
+            
+            #suteku-menu-btn svg {
+                width: 35px;
+                height: 26px;
+            }
+            
+            #suteku-menu {
+                left: 5px;
+                top: 45px;
+            }
+            
             #puzzle-pieces {
                 margin-top: 10px;
                 margin-bottom: 80px;
@@ -674,11 +694,43 @@
     </style>
 </head>
 <body>
-    <div id="header">
-        <h1>SuTeKu</h1>
-        <button id="theme-toggle" title="Theme wechseln">🌙</button>
-        <span id="help-icon">❓</span>
+    <!-- Fixed Menu Button -->
+    <div id="suteku-menu-btn" onclick="toggleSutekuMenu()">
+        <svg width="92.923019mm" height="69.316071mm" viewBox="0 0 92.923019 69.316071" version="1.1" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(8.3761804,3.1829663)">
+                <rect style="fill:#3c5fd6;fill-opacity:1;stroke:#000000;stroke-width:1" width="25.521469" height="25.091335" x="-13.022692" y="13.166703" transform="rotate(-22.761233)" />
+                <text style="font-weight:bold;font-size:22.5778px;font-family:Thonburi;text-align:center;text-anchor:middle;fill:#000000" x="-0.40533397" y="33.013977" transform="rotate(-22.761233)">
+                    <tspan x="-0.14075059" y="33.013977">9</tspan>
+                </text>
+                <rect style="fill:#3c5fd6;fill-opacity:1;stroke:#000000;stroke-width:1" width="25.521469" height="25.091335" x="12.939558" y="13.185142" transform="rotate(-22.761233)" />
+                <text style="font-weight:bold;font-size:22.5778px;font-family:Thonburi;text-align:center;text-anchor:middle;fill:#000000" x="25.556917" y="33.258209" transform="rotate(-22.761233)">
+                    <tspan x="25.821501" y="33.258209">2</tspan>
+                </text>
+                <rect style="fill:#3c5fd6;fill-opacity:1;stroke:#000000;stroke-width:1" width="25.521469" height="25.091335" x="12.923439" y="38.650421" transform="rotate(-22.761233)" />
+                <text style="font-weight:bold;font-size:22.5778px;font-family:Thonburi;text-align:center;text-anchor:middle;fill:#000000" x="25.540796" y="58.723488" transform="rotate(-22.761233)">
+                    <tspan x="25.80538" y="58.723488">5</tspan>
+                </text>
+                <rect style="fill:#3c5fd6;fill-opacity:1;stroke:#000000;stroke-width:1" width="25.521469" height="25.091335" x="38.91391" y="38.668858" transform="rotate(-22.761233)" />
+                <text style="font-weight:bold;font-size:22.5778px;font-family:Thonburi;text-align:center;text-anchor:middle;fill:#000000" x="51.503048" y="58.96772" transform="rotate(-22.761233)">
+                    <tspan x="51.767632" y="58.96772">8</tspan>
+                </text>
+                <text style="font-weight:bold;font-size:22.5778px;font-family:Thonburi;text-align:center;text-anchor:middle;fill:#000000" x="34.032135" y="65.524559">
+                    <tspan x="34.296719" y="65.524559">SuTeKu</tspan>
+                </text>
+            </g>
+        </svg>
     </div>
+    <div id="suteku-menu">
+        <div id="seed-display-menu">
+            Aktueller Seed: <span id="menu-seed-value">-</span>
+        </div>
+        <div class="menu-item" onclick="showMenu()">Menü</div>
+        <div class="menu-item" onclick="restartGame()">Neu Start</div>
+        <div class="menu-item" onclick="saveSeed()">Seed Speicher</div>
+        <div class="menu-item" onclick="toggleTheme()">🌙 Theme wechseln</div>
+        <div class="menu-item" onclick="openHelpPopup()">❓ Hilfe</div>
+    </div>
+
     <div id="game-container">
         <div id="difficulty-selection">
             <div id="seed-input-container">
@@ -695,12 +747,7 @@
         </div>
         <div id="sudoku-grid"></div>
         <div id="puzzle-pieces"></div>
-        <div id="current-seed-display">
-            <strong>Aktueller Seed:</strong> <span id="current-seed-value"></span>
-            <button onclick="copySeed()">Kopieren</button>
-            <button onclick="shareSeed()">Teilen</button>
-        </div>
-        <button id="new-game-btn">Neues Spiel</button>
+
     </div>
     <div id="mobile-controls">
         <button id="mobile-place-btn" disabled>Platzieren</button>
@@ -756,15 +803,10 @@
         const numberSelector = document.getElementById('number-selector');
         const numbers = document.getElementById('numbers');
         const cellColor = document.getElementById('cell-color');
-        const newGameBtn = document.getElementById('new-game-btn');
         const successMessage = document.getElementById('success-message');
-        const helpIcon = document.getElementById('help-icon');
         const helpPopup = document.getElementById('help-popup');
-        const themeToggle = document.getElementById('theme-toggle');
         const difficultySelection = document.getElementById('difficulty-selection');
         const seedInput = document.getElementById('seed-input');
-        const currentSeedDisplay = document.getElementById('current-seed-display');
-        const currentSeedValue = document.getElementById('current-seed-value');
         const mobileControls = document.getElementById('mobile-controls');
         const mobilePlaceBtn = document.getElementById('mobile-place-btn');
         const mobileClearBtn = document.getElementById('mobile-clear-btn');
@@ -796,20 +838,36 @@
         function setTheme(theme) {
             if (theme === 'dark') {
                 document.documentElement.setAttribute('data-theme', 'dark');
-                themeToggle.textContent = '☀️';
-                themeToggle.title = 'Zum hellen Modus wechseln';
             } else {
                 document.documentElement.removeAttribute('data-theme');
-                themeToggle.textContent = '🌙';
-                themeToggle.title = 'Zum dunklen Modus wechseln';
             }
             localStorage.setItem('suteku-theme', theme);
+            
+            // Update menu item text
+            updateThemeMenuItem(theme);
+        }
+
+        function updateThemeMenuItem(theme) {
+            // Find the theme menu item and update its text
+            const menuItems = document.querySelectorAll('.menu-item');
+            menuItems.forEach(item => {
+                if (item.onclick && item.onclick.toString().includes('toggleTheme')) {
+                    if (theme === 'dark') {
+                        item.textContent = '☀️ Heller Modus';
+                    } else {
+                        item.textContent = '🌙 Dunkler Modus';
+                    }
+                }
+            });
         }
 
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             setTheme(newTheme);
+            
+            // Close menu
+            document.getElementById('suteku-menu').classList.remove('show');
         }
 
         // Seeded Random Number Generator (Mulberry32)
@@ -949,9 +1007,8 @@
             difficultySelection.style.display = 'none';
             sudokuGrid.style.display = 'grid';
             puzzlePieces.style.display = 'flex';
-            newGameBtn.style.display = 'block';
-            currentSeedDisplay.style.display = 'block';
-            currentSeedValue.textContent = currentSeed;
+
+
             
             // Mobile Steuerung anzeigen wenn Touch-Gerät
             if (isTouchDevice) {
@@ -1664,7 +1721,7 @@
                     'Perfekt gelöst!',
                     'Glückwunsch! Du hast das Sudoku korrekt gelöst. Alle Zahlen sind an der richtigen Stelle!',
                     [
-                        { text: 'Neues Spiel', class: 'success-btn', action: () => { closeResultModal(); newGameBtn.click(); } },
+                        { text: 'Neues Spiel', class: 'success-btn', action: () => { closeResultModal(); showMenu(); } },
                         { text: 'Schließen', class: 'neutral-btn', action: closeResultModal }
                     ]
                 );
@@ -1676,7 +1733,7 @@
                     'Das Sudoku ist leider nicht korrekt gelöst. Bitte überprüfe deine Eingaben - es gibt noch Fehler in den Reihen, Spalten oder Blöcken.',
                     [
                         { text: 'Weiter versuchen', class: 'error-btn', action: closeResultModal },
-                        { text: 'Neues Spiel', class: 'neutral-btn', action: () => { closeResultModal(); newGameBtn.click(); } }
+                        { text: 'Neues Spiel', class: 'neutral-btn', action: () => { closeResultModal(); showMenu(); } }
                     ]
                 );
             }
@@ -1860,11 +1917,7 @@
              updateMobileControls();
          });
 
-         helpIcon.addEventListener('click', () => {
-             helpPopup.style.display = 'block';
-         });
 
-         themeToggle.addEventListener('click', toggleTheme);
 
          // Rotation-Bereiche Event-Handler
          function setupRotationAreas() {
@@ -1900,20 +1953,36 @@
              helpPopup.style.display = 'none';
          }
 
-        document.addEventListener('click', (e) => {
-            if (!numberSelector.contains(e.target) && e.target !== selectedCell) {
-                numberSelector.style.display = 'none';
-            }
-        });
+         function openHelpPopup() {
+             helpPopup.style.display = 'block';
+             // Close menu
+             document.getElementById('suteku-menu').classList.remove('show');
+         }
 
-                 newGameBtn.addEventListener('click', () => {
+
+
+        // SuTeKu Menu Functions
+        function toggleSutekuMenu() {
+            const menu = document.getElementById('suteku-menu');
+            const menuSeedValue = document.getElementById('menu-seed-value');
+            
+            // Update seed display in menu
+            if (currentSeed) {
+                menuSeedValue.textContent = currentSeed.toString().substring(0, 20) + (currentSeed.toString().length > 20 ? '...' : '');
+            } else {
+                menuSeedValue.textContent = '-';
+            }
+            
+            menu.classList.toggle('show');
+        }
+
+                 function showMenu() {
+             // Navigate back to main menu
              currentDifficulty = null;
              currentSeed = null;
              difficultySelection.style.display = 'flex';
              sudokuGrid.style.display = 'none';
              puzzlePieces.style.display = 'none';
-             newGameBtn.style.display = 'none';
-             currentSeedDisplay.style.display = 'none';
              successMessage.style.display = 'none';
              mobileControls.style.display = 'none';
              rotationAreas.classList.remove('active');
@@ -1922,7 +1991,73 @@
              clearPuzzleSelection();
              clearGridSelection();
              updateMobileControls();
-         });
+             
+             // Close menu
+             document.getElementById('suteku-menu').classList.remove('show');
+         }
+
+        function restartGame() {
+            if (currentDifficulty && currentSeed !== null) {
+                // Restart with same difficulty and seed
+                startGame(currentDifficulty);
+            } else {
+                // Go back to menu if no game running
+                showMenu();
+            }
+            
+            // Close menu
+            document.getElementById('suteku-menu').classList.remove('show');
+        }
+
+        function saveSeed() {
+            if (currentSeed !== null) {
+                // Save seed to localStorage
+                const savedSeeds = JSON.parse(localStorage.getItem('suteku-saved-seeds') || '[]');
+                const seedData = {
+                    seed: currentSeed,
+                    difficulty: currentDifficulty,
+                    date: new Date().toLocaleDateString('de-DE'),
+                    time: new Date().toLocaleTimeString('de-DE')
+                };
+                
+                // Check if seed already exists
+                const existingIndex = savedSeeds.findIndex(saved => saved.seed === currentSeed && saved.difficulty === currentDifficulty);
+                if (existingIndex >= 0) {
+                    savedSeeds[existingIndex] = seedData; // Update existing
+                } else {
+                    savedSeeds.unshift(seedData); // Add to beginning
+                }
+                
+                // Keep only last 10 saved seeds
+                if (savedSeeds.length > 10) {
+                    savedSeeds.splice(10);
+                }
+                
+                localStorage.setItem('suteku-saved-seeds', JSON.stringify(savedSeeds));
+                
+                // Show confirmation
+                alert(`Seed ${currentSeed} (${currentDifficulty}) wurde gespeichert!`);
+            } else {
+                alert('Kein aktiver Seed zum Speichern vorhanden.');
+            }
+            
+            // Close menu
+            document.getElementById('suteku-menu').classList.remove('show');
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('suteku-menu');
+            const menuBtn = document.getElementById('suteku-menu-btn');
+            
+            if (!menu.contains(e.target) && !menuBtn.contains(e.target)) {
+                menu.classList.remove('show');
+            }
+            
+            if (!numberSelector.contains(e.target) && e.target !== selectedCell) {
+                numberSelector.style.display = 'none';
+            }
+        });
 
         // Initialize the game
         initTheme();
@@ -1930,7 +2065,6 @@
         difficultySelection.style.display = 'flex';
         sudokuGrid.style.display = 'none';
         puzzlePieces.style.display = 'none';
-        newGameBtn.style.display = 'none';
     </script>
 </body>
 </html>
