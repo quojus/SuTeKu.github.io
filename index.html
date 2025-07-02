@@ -696,11 +696,23 @@
         .touch-device .puzzle-piece {
             min-height: 44px;
             min-width: 44px;
+            margin: 5px;
         }
         
         .touch-device .sudoku-cell {
             min-height: 44px;
             min-width: 44px;
+        }
+        
+        /* Touch-Feedback verbessern */
+        .puzzle-piece:active {
+            transform: scale(1.05);
+            opacity: 0.8;
+        }
+        
+        .sudoku-cell:active {
+            transform: scale(1.1);
+            z-index: 10;
         }
         
         @media (max-width: 768px) {
@@ -727,6 +739,17 @@
             #puzzle-pieces {
                 margin-top: 10px;
                 margin-bottom: 80px;
+                gap: 12px;
+            }
+            
+            .puzzle-piece {
+                margin: 8px;
+                padding: 8px;
+            }
+            
+            .sudoku-cell {
+                min-width: max(35px, 8vw);
+                min-height: max(35px, 8vw);
             }
             
             #rotation-areas {
@@ -872,7 +895,7 @@
         let puzzleShapes = null;
         let currentSeed = null;
         let seedRandom = null;
-        let isTouchDevice = 'ontouchstart' in window;
+        let isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
         // Touch-Steuerung Variablen
         let touchData = {
@@ -896,6 +919,9 @@
         // Touch-Device-Klasse hinzufügen
         if (isTouchDevice) {
             document.body.classList.add('touch-device');
+            console.log('Touch-Gerät erkannt');
+        } else {
+            console.log('Desktop-Gerät erkannt');
         }
 
         // Theme Management
@@ -1396,10 +1422,11 @@
             cell.addEventListener('drop', drop);
             cell.addEventListener('dblclick', cellDoubleClick);
 
-            // Neue Touch-Events hinzufügen
-            if (isTouchDevice) {
-                cell.addEventListener('touchstart', handleCellTouchStart);
-            } else {
+            // Touch-Events für alle Geräte hinzufügen
+            cell.addEventListener('touchstart', handleCellTouchStart);
+            
+            // Für Desktop-Geräte auch Click-Event
+            if (!isTouchDevice) {
                 cell.addEventListener('click', cellClick);
             }
 
@@ -1451,12 +1478,13 @@
             piece.dataset.hidden = JSON.stringify(puzzleShape.hidden || []);
             piece.dataset.color = puzzleShape.color;
             
-            // Neue Touch-Events hinzufügen
-            if (isTouchDevice) {
-                piece.addEventListener('touchstart', handlePieceTouchStart);
-                piece.addEventListener('touchmove', handlePieceTouchMove);
-                piece.addEventListener('touchend', handlePieceTouchEnd);
-            } else {
+            // Touch-Events für alle Geräte hinzufügen
+            piece.addEventListener('touchstart', handlePieceTouchStart);
+            piece.addEventListener('touchmove', handlePieceTouchMove);
+            piece.addEventListener('touchend', handlePieceTouchEnd);
+            
+            // Für Desktop-Geräte auch Click-Event
+            if (!isTouchDevice) {
                 piece.addEventListener('click', pieceClick);
             }
 
@@ -1582,7 +1610,7 @@
             if (draggedShape) {
                 const targetRow = parseInt(e.target.dataset.row);
                 const targetCol = parseInt(e.target.dataset.col);
-                placeShape(draggedShape.shape, draggedShape.numbers, targetRow, targetCol, draggedShape.color);
+                placeShape(draggedShape.shape, draggedShape.numbers, targetRow, targetCol, draggedShape.color, draggedShape.hidden);
             }
         }
 
@@ -1621,7 +1649,7 @@
             });
         }
 
-        function placeShape(shape, numbers, startRow, startCol, color) {
+        function placeShape(shape, numbers, startRow, startCol, color, hidden = null) {
             if (showPreview(shape, numbers, startRow, startCol)) {
                 const blockId = Date.now();
                 for (let i = 0; i < shape.length; i++) {
@@ -1631,7 +1659,19 @@
                             const col = startCol + j;
                             const cell = sudokuGrid.querySelector(`[data-row="${row}"][data-col="${col}"]`);
                             cell.style.backgroundColor = color;
-                            cell.textContent = numbers[i][j];
+                            
+                            // Prüfe ob diese Zelle versteckt werden soll
+                            const shouldHide = hidden && hidden[i] && hidden[i][j];
+                            if (shouldHide) {
+                                cell.textContent = '?';
+                                cell.style.fontSize = 'clamp(10px, 2.5vw, 14px)';
+                                cell.dataset.hiddenNumber = numbers[i][j]; // Speichere die echte Zahl
+                            } else {
+                                cell.textContent = numbers[i][j];
+                                cell.style.fontSize = ''; // Reset to default
+                                delete cell.dataset.hiddenNumber; // Entferne falls vorhanden
+                            }
+                            
                             cell.dataset.blockId = blockId;
                             cell.style.color = '#fff';
                             cell.classList.remove('user-input');
@@ -1682,6 +1722,7 @@
             const cells = Array.from(sudokuGrid.children).filter(cell => cell.dataset.blockId === blockId);
             let removedShape = [];
             let removedNumbers = [];
+            let removedHidden = [];
             let removedColor = null;
             let minRow = Infinity;
             let minCol = Infinity;
@@ -1704,16 +1745,29 @@
             for (let i = minRow; i <= maxRow; i++) {
                 removedShape[i - minRow] = [];
                 removedNumbers[i - minRow] = [];
+                removedHidden[i - minRow] = [];
                 for (let j = minCol; j <= maxCol; j++) {
                     const cell = sudokuGrid.querySelector(`[data-row="${i}"][data-col="${j}"]`);
                     if (cell && cell.dataset.blockId === blockId) {
                         removedShape[i - minRow][j - minCol] = 1;
-                        removedNumbers[i - minRow][j - minCol] = parseInt(cell.textContent) || 0;
+                        
+                        // Prüfe ob die Zelle ein Fragezeichen enthält (versteckte Zahl)
+                        const isHidden = cell.textContent === '?';
+                        removedHidden[i - minRow][j - minCol] = isHidden;
+                        
+                        if (isHidden) {
+                            // Für versteckte Zellen: Originalzahl aus dem Dataset holen
+                            removedNumbers[i - minRow][j - minCol] = parseInt(cell.dataset.hiddenNumber) || 0;
+                        } else {
+                            removedNumbers[i - minRow][j - minCol] = parseInt(cell.textContent) || 0;
+                        }
 
                         cell.textContent = '';
                         cell.style.backgroundColor = '';
                         cell.style.color = '';
+                        cell.style.fontSize = ''; // Reset font size
                         delete cell.dataset.blockId;
+                        delete cell.dataset.hiddenNumber; // Entferne versteckte Zahl
                         if (cell.dataset.userInput) {
                             cell.textContent = cell.dataset.userInput === '0' ? '' : cell.dataset.userInput;
                             cell.style.color = cell.dataset.userColor;
@@ -1722,34 +1776,12 @@
                     } else {
                         removedShape[i - minRow][j - minCol] = 0;
                         removedNumbers[i - minRow][j - minCol] = 0;
+                        removedHidden[i - minRow][j - minCol] = false;
                     }
                 }
             }
 
             if (removedShape.length > 0 && removedNumbers.length > 0 && removedColor) {
-                // Erstelle hidden Array für entferntes Puzzleteil
-                const removedHidden = Array(removedShape.length).fill().map(() => 
-                    Array(removedShape[0].length).fill(false)
-                );
-                
-                // Für schweren Modus: Eine Zahl verstecken
-                if (currentDifficulty === 'hard') {
-                    const filledCells = [];
-                    for (let y = 0; y < removedShape.length; y++) {
-                        for (let x = 0; x < removedShape[y].length; x++) {
-                            if (removedShape[y][x] === 1) {
-                                filledCells.push([x, y]);
-                            }
-                        }
-                    }
-                    
-                    if (filledCells.length > 0) {
-                        const indexToHide = Math.floor(filledCells.length / 2);
-                        const [hiddenX, hiddenY] = filledCells[indexToHide];
-                        removedHidden[hiddenY][hiddenX] = true;
-                    }
-                }
-                
                 const newPiece = createPuzzlePiece({
                     color: removedColor,
                     shape: removedShape,
@@ -1759,6 +1791,8 @@
                 puzzlePieces.appendChild(newPiece);
             }
         }
+
+
 
         function checkGameCompletion() {
             if (puzzlePieces.children.length === 0) {
@@ -2013,21 +2047,26 @@
 
         // Funktion für Haptic Feedback
         function hapticFeedback(type = 'light') {
-            if (navigator.vibrate) {
-                switch(type) {
-                    case 'light':
-                        navigator.vibrate(20);
-                        break;
-                    case 'medium':
-                        navigator.vibrate(50);
-                        break;
-                    case 'heavy':
-                        navigator.vibrate([100, 50, 100]);
-                        break;
-                    case 'error':
-                        navigator.vibrate([50, 50, 50, 50, 100]);
-                        break;
+            try {
+                if (navigator.vibrate) {
+                    switch(type) {
+                        case 'light':
+                            navigator.vibrate(20);
+                            break;
+                        case 'medium':
+                            navigator.vibrate(50);
+                            break;
+                        case 'heavy':
+                            navigator.vibrate([100, 50, 100]);
+                            break;
+                        case 'error':
+                            navigator.vibrate([50, 50, 50, 50, 100]);
+                            break;
+                    }
                 }
+            } catch (e) {
+                // Vibration nicht unterstützt - ignorieren
+                console.log('Vibration nicht verfügbar');
             }
         }
 
@@ -2079,7 +2118,7 @@
         }
 
         // Hilfsfunktion: Prüft ob ein Shape an einer Position platziert werden kann
-        function canPlaceShape(shape, startRow, startCol) {
+        function canPlaceShapeAtPosition(shape, startRow, startCol) {
             for (let i = 0; i < shape.length; i++) {
                 for (let j = 0; j < shape[i].length; j++) {
                     if (shape[i][j]) {
@@ -2103,7 +2142,7 @@
         }
 
         // Gültige Drop-Zone finden
-        function findValidDropZone(x, y, shape, numbers) {
+        function findValidDropZone(x, y, shape) {
             const element = getElementUnderTouch(x, y);
             if (!element || !element.classList.contains('sudoku-cell')) {
                 return null;
@@ -2113,7 +2152,7 @@
             const col = parseInt(element.dataset.col);
 
             // Prüfen ob Platzierung möglich ist
-            if (canPlaceShape(shape, row, col)) {
+            if (canPlaceShapeAtPosition(shape, row, col)) {
                 return {
                     element: element,
                     row: row,
@@ -2125,36 +2164,40 @@
         }
 
         // Visuelle Hinweise für gültige Drop-Zone
-        function highlightDropZone(dropZone, isValid) {
+        function highlightDropZone(dropZone, shape, isValid) {
             // Alle Highlights entfernen
             sudokuGrid.querySelectorAll('.drop-highlight').forEach(cell => {
                 cell.classList.remove('drop-highlight', 'valid-drop', 'invalid-drop');
             });
 
-            if (dropZone) {
-                const shape = JSON.parse(touchData.element.dataset.shape);
+            if (dropZone && shape) {
                 const row = dropZone.row;
                 const col = dropZone.col;
 
                 // Alle Zellen des Shapes highlighten
-                shape.forEach(([shapeRow, shapeCol]) => {
-                    const targetRow = row + shapeRow;
-                    const targetCol = col + shapeCol;
-                    
-                    if (targetRow >= 0 && targetRow < 9 && targetCol >= 0 && targetCol < 9) {
-                        const targetCell = sudokuGrid.children[targetRow * 9 + targetCol];
-                        if (targetCell) {
-                            targetCell.classList.add('drop-highlight');
-                            targetCell.classList.add(isValid ? 'valid-drop' : 'invalid-drop');
+                for (let i = 0; i < shape.length; i++) {
+                    for (let j = 0; j < shape[i].length; j++) {
+                        if (shape[i][j]) {
+                            const targetRow = row + i;
+                            const targetCol = col + j;
+                            
+                            if (targetRow >= 0 && targetRow < 9 && targetCol >= 0 && targetCol < 9) {
+                                const targetCell = sudokuGrid.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`);
+                                if (targetCell) {
+                                    targetCell.classList.add('drop-highlight');
+                                    targetCell.classList.add(isValid ? 'valid-drop' : 'invalid-drop');
+                                }
+                            }
                         }
                     }
-                });
+                }
             }
         }
 
         // Touch Start Handler für Puzzleteile
         function handlePieceTouchStart(e) {
             e.preventDefault();
+            e.stopPropagation();
             
             const touch = e.touches[0];
             const position = getTouchPosition(touch);
@@ -2189,13 +2232,14 @@
                         this.style.border = '3px solid #ff9800';
                         this.style.animation = 'rotate-pulse 1s infinite';
                     }
-                }, 500);
+                }, 800);
             }
         }
 
         // Touch Move Handler für Puzzleteile
         function handlePieceTouchMove(e) {
             e.preventDefault();
+            e.stopPropagation();
             
             const touch = e.touches[0];
             const position = getTouchPosition(touch);
@@ -2229,8 +2273,8 @@
                 }
             }
 
-            // Drag Mode starten bei Bewegung > 10px
-            if (!touchData.isDragging && !touchData.rotationMode && distance > 10) {
+            // Drag Mode starten bei Bewegung > 15px
+            if (!touchData.isDragging && !touchData.rotationMode && distance > 15) {
                 touchData.isDragging = true;
                 clearTimeout(touchData.longPressTimer);
                 
@@ -2249,15 +2293,14 @@
                 
                 // Drop Zone prüfen und highlighten
                 const shape = JSON.parse(touchData.element.dataset.shape);
-                const numbers = JSON.parse(touchData.element.dataset.numbers);
-                const dropZone = findValidDropZone(touchData.currentX, touchData.currentY, shape, numbers);
+                const dropZone = findValidDropZone(touchData.currentX, touchData.currentY, shape);
                 
                 if (dropZone) {
-                    highlightDropZone(dropZone, true);
+                    highlightDropZone(dropZone, shape, true);
                     touchData.targetCell = dropZone;
                     touchData.previewElement.style.borderColor = '#4CAF50';
                 } else {
-                    highlightDropZone(null, false);
+                    highlightDropZone(null, shape, false);
                     touchData.targetCell = null;
                     touchData.previewElement.style.borderColor = '#f44336';
                 }
@@ -2267,6 +2310,7 @@
         // Touch End Handler für Puzzleteile
         function handlePieceTouchEnd(e) {
             e.preventDefault();
+            e.stopPropagation();
             
             clearTimeout(touchData.longPressTimer);
 
@@ -2292,9 +2336,10 @@
                 if (touchData.targetCell) {
                     const shape = JSON.parse(touchData.element.dataset.shape);
                     const numbers = JSON.parse(touchData.element.dataset.numbers);
+                    const hidden = touchData.element.dataset.hidden ? JSON.parse(touchData.element.dataset.hidden) : null;
                     const color = touchData.element.dataset.color;
                     
-                    if (placeShape(shape, numbers, touchData.targetCell.row, touchData.targetCell.col, color)) {
+                    if (placeShape(shape, numbers, touchData.targetCell.row, touchData.targetCell.col, color, hidden)) {
                         hapticFeedback('heavy');
                     } else {
                         hapticFeedback('error');
@@ -2309,7 +2354,7 @@
                 }
 
                 // Highlights entfernen
-                highlightDropZone(null, false);
+                highlightDropZone(null, null, false);
             } else {
                 // Einfacher Tap - Element zurücksetzen
                 touchData.element.style.transform = '';
@@ -2327,6 +2372,7 @@
         // Touch Start Handler für Sudoku-Zellen
         function handleCellTouchStart(e) {
             e.preventDefault();
+            e.stopPropagation();
             
             const cell = e.target;
             if (cell.classList.contains('predefined')) return;
@@ -2339,7 +2385,7 @@
             }
 
             // Nummer eingeben bei Doppel-Tap
-            if (cell === touchData.lastTappedCell && (Date.now() - touchData.lastTapTime) < 300) {
+            if (cell === touchData.lastTappedCell && (Date.now() - touchData.lastTapTime) < 500) {
                 showNumberSelector(cell);
                 hapticFeedback('light');
             }
@@ -2396,7 +2442,7 @@
                     cell.classList.add('user-input');
                     hapticFeedback('light');
                     selector.remove();
-                    checkWinCondition();
+                    checkGameCompletion();
                 });
 
                 // Hover-Effekt für Touch
